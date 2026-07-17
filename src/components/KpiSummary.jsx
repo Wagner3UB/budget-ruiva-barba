@@ -13,8 +13,8 @@ export default function KpiSummary(props) {
   const boxes = [
     { label: 'Disponível Gui', value: dGui, color: dGui < 0 ? 'var(--danger)' : 'var(--green)' },
     { label: 'Disponível Nathi', value: dNathi, color: dNathi < 0 ? 'var(--danger)' : 'var(--green)' },
-    { label: 'Cofrinho Casa 🏠', value: cCasa, color: 'var(--teal)' },
-    { label: 'Cofrinho Nathi 👩', value: cNathi, color: 'var(--teal)' },
+    { label: 'Reservas Casa 🏠', value: cCasa, color: 'var(--teal)' },
+    { label: 'Reservas Nathi 👩', value: cNathi, color: 'var(--teal)' },
   ]
 
   return (

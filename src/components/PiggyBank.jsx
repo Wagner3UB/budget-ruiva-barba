@@ -145,7 +145,7 @@ export default function PiggyBank({ piggy = 'casa', expenses, houseTaxes, taxPay
 
       <div className="summary" style={{ marginBottom: 16 }}>
         <div className="box">
-          <div className="label">Saldo do cofrinho</div>
+          <div className="label">Saldo das reservas</div>
           <div className="value" style={{ color: balance < 0 ? 'var(--danger)' : 'var(--teal)', fontSize: 22 }}>{money(balance)}</div>
           <div className="meta" style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>
             inicial {money(opening)} + dep. {money(depositsTotal)} − pago {money(paidTotal)}
@@ -160,7 +160,7 @@ export default function PiggyBank({ piggy = 'casa', expenses, houseTaxes, taxPay
 
       {pendingTransfers.length > 0 && (
         <div className="warn-banner">
-          🔔 Transferências pendentes (cofrinho → conta):
+          🔔 Transferências pendentes (reservas → conta):
           <div style={{ marginTop: 8 }}>
             {pendingTransfers.map((p) => (
               <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
@@ -302,7 +302,7 @@ export default function PiggyBank({ piggy = 'casa', expenses, houseTaxes, taxPay
 
       {/* ---------- DEPÓSITO ---------- */}
       <div className="card">
-        <h2>Registrar depósito no cofrinho</h2>
+        <h2>Registrar depósito nas reservas</h2>
         <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: -4 }}>
           Dinheiro que sai da conta do {cfg.depositor} pra reserva (abate do Disponível dele/dela).
         </p>
