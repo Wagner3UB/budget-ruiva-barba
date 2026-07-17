@@ -113,6 +113,8 @@ export default function PiggyBank({ piggy = 'casa', expenses, houseTaxes, taxPay
   // ---------- deposito ----------
   const [depDate, setDepDate] = useState(todayISO())
   const [depAmount, setDepAmount] = useState('')
+  const [depNote, setDepNote] = useState('')
+  const [depMsg, setDepMsg] = useState('')
   const ensureDepositCategory = async () => {
     const found = categories.find((c) => c.name.toLowerCase() === cfg.category.toLowerCase())
     if (found) return found.id
@@ -122,13 +124,16 @@ export default function PiggyBank({ piggy = 'casa', expenses, houseTaxes, taxPay
   const registerDeposit = async (e) => {
     e.preventDefault()
     const amt = depAmount ? num(depAmount) : Number(monthlyReserve.toFixed(2))
-    if (!amt) return
+    if (!amt) { setDepMsg('Informe um valor.'); return }
     const catId = await ensureDepositCategory()
-    await supabase.from('expenses').insert({
-      date: depDate, category_id: catId, description: 'Depósito cofrinho',
-      place: 'Cofrinho', amount: amt, paid_by: cfg.depositor, pay_status: 'Sim', piggy_deposit: true, piggy,
+    const { error } = await supabase.from('expenses').insert({
+      date: depDate, category_id: catId,
+      description: depNote || 'Depósito reservas',
+      place: depNote || 'Reservas',
+      amount: amt, paid_by: cfg.depositor, pay_status: 'Sim', piggy_deposit: true, piggy,
     })
-    setDepAmount(''); reload()
+    if (error) { setDepMsg('Erro ao salvar: ' + error.message); return }
+    setDepMsg(''); setDepAmount(''); setDepNote(''); reload()
   }
   const delDeposit = async (id) => { await supabase.from('expenses').delete().eq('id', id); reload() }
 
@@ -313,13 +318,19 @@ export default function PiggyBank({ piggy = 'casa', expenses, houseTaxes, taxPay
             <div className="field"><label>Valor (€)</label>
               <input inputMode="decimal" value={depAmount} placeholder={money(monthlyReserve)} onChange={(e) => setDepAmount(e.target.value)} /></div>
           </div>
+          <div className="field"><label>Descrição (opcional)</label>
+            <input value={depNote} onChange={(e) => setDepNote(e.target.value)} placeholder="ex: reserva de julho" /></div>
+          {depMsg && <div className="msg err">{depMsg}</div>}
           <button className="btn">Registrar depósito</button>
         </form>
         {deposits.length > 0 && (
           <div style={{ marginTop: 12 }}>
             {deposits.map((d) => (
               <div className="item" key={d.id}>
-                <span className="meta">{d.date}</span>
+                <div>
+                  <div className="desc">{d.place || d.description || 'Depósito'}</div>
+                  <div className="meta">{d.date}</div>
+                </div>
                 <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                   <span className="amt" style={{ color: 'var(--teal)' }}>+{money(d.amount)}</span>
                   <button className="x" onClick={() => delDeposit(d.id)}>✕</button>
