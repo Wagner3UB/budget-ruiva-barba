@@ -20,6 +20,8 @@ export default function Expenses({ categories, monthExpenses, accounts, fixedExp
   const [busy, setBusy] = useState(false)
   const amountRef = useRef(null)
   const [editingExpId, setEditingExpId] = useState(null)
+  const [flash, setFlash] = useState('')
+  const showFlash = (msg) => { setFlash(msg); setTimeout(() => setFlash(''), 3000) }
 
   const addExpense = async (e) => {
     e.preventDefault()
@@ -33,10 +35,10 @@ export default function Expenses({ categories, monthExpenses, accounts, fixedExp
     }
     if (editingExpId) {
       await supabase.from('expenses').update(payload).eq('id', editingExpId)
-      setEditingExpId(null); setPlace(''); setAmount(''); setPayStatus('Sim'); setBusy(false); reload()
+      setEditingExpId(null); setPlace(''); setAmount(''); setPayStatus('Sim'); setBusy(false); reload(); showFlash('Gasto atualizado com sucesso ✓')
     } else {
       await supabase.from('expenses').insert({ ...payload, is_fixed: false })
-      setPlace(''); setAmount(''); setPayStatus('Sim'); setBusy(false); reload()
+      setPlace(''); setAmount(''); setPayStatus('Sim'); setBusy(false); reload(); showFlash('Gasto adicionado com sucesso ✓')
       amountRef.current?.focus()
     }
   }
@@ -277,6 +279,7 @@ export default function Expenses({ categories, monthExpenses, accounts, fixedExp
             <button className="btn" style={{ flex: 1 }} disabled={busy}>{busy ? 'Salvando…' : editingExpId ? 'Salvar alteração' : 'Adicionar gasto'}</button>
             {editingExpId && <button type="button" className="btn btn-ghost" style={{ flex: 0, padding: '13px 16px' }} onClick={cancelExpEdit}>Cancelar</button>}
           </div>
+          {flash && <div className="msg ok" style={{ marginTop: 10 }}>{flash}</div>}
         </form>
       </div>
 
