@@ -16,7 +16,7 @@ const TABS = [
   { id: 'orcamento', label: 'Orçam.', ic: '🎯' },
   { id: 'metas', label: 'Metas', ic: '⭐' },
   { id: 'cofrinho', label: 'Casa', ic: '🏠' },
-  { id: 'nathi', label: 'Nathi', ic: '👩' },
+  { id: 'nathi', label: 'Nathi', ic: '🍓' },
 ]
 
 export default function App() {
