@@ -111,7 +111,7 @@ export default function Expenses({ categories, monthExpenses, accounts, fixedExp
   }
   const delAccount = async (id) => { await supabase.from('accounts').delete().eq('id', id); reload() }
 
-  const variableExpenses = monthExpenses.filter((e) => !e.fixed_id)
+  const variableExpenses = monthExpenses.filter((e) => !e.fixed_id && !e.piggy_deposit)
   const fixedPaidTotal = Object.values(paidFixedThisMonth).reduce((s, e) => s + Number(e.amount), 0)
   const fixedPendingTotal = monthFixed
     .filter((f) => !paidFixedThisMonth[f.id])
