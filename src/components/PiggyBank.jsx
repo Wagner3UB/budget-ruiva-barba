@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { supabase } from '../supabaseClient'
-import { money, todayISO } from '../lib/helpers'
+import { money, todayISO, parseAmount } from '../lib/helpers'
 
 const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
 
@@ -17,7 +17,7 @@ export default function PiggyBank({ piggy = 'casa', expenses, houseTaxes, taxPay
     const r = ev.currentTarget.getBoundingClientRect()
     setPop({ text, x: r.left + r.width / 2, y: r.top })
   }
-  const num = (v) => Number(String(v).replace(',', '.')) || 0
+  const num = (v) => { const n = parseAmount(v); return Number.isFinite(n) ? n : 0 }
 
   const items = useMemo(
     () => houseTaxes.filter((t) => t.year === year && (t.piggy || 'casa') === piggy).sort((a, b) => a.name.localeCompare(b.name)),
@@ -54,9 +54,17 @@ export default function PiggyBank({ piggy = 'casa', expenses, houseTaxes, taxPay
   // ---------- acoes ----------
   const [editOpen, setEditOpen] = useState(false)
   const [openVal, setOpenVal] = useState('')
+  const [openMsg, setOpenMsg] = useState('')
   const saveOpening = async () => {
-    await supabase.from('piggy_year').upsert({ piggy, year, opening: num(openVal) }, { onConflict: 'piggy,year' })
-    setEditOpen(false); setOpenVal(''); reload()
+    const n = parseAmount(openVal)
+    if (openVal.trim() !== '' && !Number.isFinite(n)) {
+      setOpenMsg('Valor inválido. Use vírgula para decimais — ex: 2120,36')
+      return
+    }
+    const { error } = await supabase.from('piggy_year').upsert(
+      { piggy, year, opening: Number.isFinite(n) ? n : 0 }, { onConflict: 'piggy,year' })
+    if (error) { setOpenMsg('Erro ao salvar: ' + error.message); return }
+    setOpenMsg(''); setEditOpen(false); setOpenVal(''); reload()
   }
 
   const togglePaid = async (p) => {
@@ -311,11 +319,14 @@ export default function PiggyBank({ piggy = 'casa', expenses, houseTaxes, taxPay
           </button>
         </h2>
         {editOpen ? (
-          <div style={{ display: 'flex', gap: 8 }}>
-            <input style={{ flex: 1, padding: 10, border: '1px solid var(--border)', borderRadius: 10 }}
-              inputMode="decimal" value={openVal} onChange={(e) => setOpenVal(e.target.value)} placeholder="0,00" />
-            <button className="btn btn-sm" onClick={saveOpening}>Salvar</button>
-          </div>
+          <>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input style={{ flex: 1, padding: 10, border: '1px solid var(--border)', borderRadius: 10 }}
+                inputMode="decimal" value={openVal} onChange={(e) => setOpenVal(e.target.value)} placeholder="0,00" />
+              <button className="btn btn-sm" onClick={saveOpening}>Salvar</button>
+            </div>
+            {openMsg && <div className="msg err" style={{ marginTop: 8 }}>{openMsg}</div>}
+          </>
         ) : (
           <div className="item"><span className="desc">Reservas no início de {year}</span><span className="amt">{money(opening)}</span></div>
         )}

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { supabase } from '../supabaseClient'
-import { money, todayISO, counted } from '../lib/helpers'
+import { money, todayISO, counted, parseAmount } from '../lib/helpers'
 
 const PEOPLE = ['Gui', 'Nathi']
 
@@ -13,7 +13,7 @@ export default function Income({ incomes, expenses, month, balances, reload }) {
   const [editOpening, setEditOpening] = useState(false)
   const [openVals, setOpenVals] = useState({})
 
-  const num = (v) => Number(String(v).replace(',', '.')) || 0
+  const num = (v) => { const n = parseAmount(v); return Number.isFinite(n) ? n : 0 }
 
   const openingOf = (p) => Number(balances.find((b) => b.person === p)?.opening || 0)
 

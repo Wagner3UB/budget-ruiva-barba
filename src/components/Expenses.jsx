@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
 import { supabase } from '../supabaseClient'
-import { money, todayISO, monthKey, daysInMonth, fixedActiveIn, PALETTE } from '../lib/helpers'
+import { money, todayISO, monthKey, daysInMonth, fixedActiveIn, PALETTE, parseAmount } from '../lib/helpers'
 
 const PAY = ['Não', 'Sim', 'Não contabilizado']
 const WHO = ['Gui', 'Nathi', 'Casal']
@@ -27,7 +27,7 @@ export default function Expenses({ categories, monthExpenses, accounts, fixedExp
     await supabase.from('expenses').insert({
       date, category_id: categoryId,
       description: place || catById[categoryId]?.name || '',
-      place, amount: Number(String(amount).replace(',', '.')),
+      place, amount: parseAmount(amount),
       paid_by: paidBy, account: account || null,
       is_fixed: false, pay_status: payStatus,
     })
@@ -82,7 +82,7 @@ export default function Expenses({ categories, monthExpenses, accounts, fixedExp
     await supabase.from('fixed_expenses').insert({
       category_id: fCat,
       description: catById[fCat]?.name || '',
-      amount: Number(String(fAmount).replace(',', '.')),
+      amount: parseAmount(fAmount),
       paid_by: fWho, account: fAcc || null,
       day_of_month: Number(fDay) || 1,
       start_month: fStart, end_month: fEnd || null, active: true,
@@ -90,7 +90,7 @@ export default function Expenses({ categories, monthExpenses, accounts, fixedExp
     setFCat(''); setFAmount(''); setFAcc(''); setFDay('1'); setFEnd(''); reload()
   }
   const updateFixedAmount = async (f, val) => {
-    await supabase.from('fixed_expenses').update({ amount: Number(String(val).replace(',', '.')) || 0 }).eq('id', f.id)
+    await supabase.from('fixed_expenses').update({ amount: parseAmount(val) || 0 }).eq('id', f.id)
     reload()
   }
   const toggleFixedActive = async (f) => {

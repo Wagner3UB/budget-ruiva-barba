@@ -62,3 +62,13 @@ export function cofrinhoBalance(piggy, { piggyYear = [], houseTaxes = [], taxPay
     .reduce((s, p) => s + Number(p.amount), 0)
   return opening + deposits - paid
 }
+
+// Converte "2.120,36" / "350,03" / "1000.50" em número. Retorna NaN se inválido.
+export function parseAmount(v) {
+  if (v == null) return 0
+  let s = String(v).trim()
+  if (!s) return 0
+  if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.') // milhar (.) fora, vírgula -> ponto
+  const n = Number(s)
+  return Number.isFinite(n) ? n : NaN
+}
