@@ -4,38 +4,79 @@ import { money, todayISO } from '../lib/helpers'
 
 const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
 
-export default function PiggyBank({ expenses, houseTaxes, piggyYear, categories, reload }) {
+export default function PiggyBank({ expenses, houseTaxes, taxPayments, piggyYear, categories, reload }) {
   const [year, setYear] = useState(new Date().getFullYear())
+  const num = (v) => Number(String(v).replace(',', '.')) || 0
 
-  // ---------- calculos ----------
-  const yearTaxes = useMemo(
-    () => houseTaxes.filter((t) => t.year === year).sort((a, b) => (a.due_month || 0) - (b.due_month || 0)),
+  const items = useMemo(
+    () => houseTaxes.filter((t) => t.year === year).sort((a, b) => a.name.localeCompare(b.name)),
     [houseTaxes, year])
+  const itemIds = new Set(items.map((i) => i.id))
+  const payments = useMemo(
+    () => taxPayments.filter((p) => itemIds.has(p.tax_id)),
+    [taxPayments, items])
+
+  // paymentMap[tax_id][month] = payment
+  const payMap = useMemo(() => {
+    const m = {}
+    for (const p of payments) { (m[p.tax_id] = m[p.tax_id] || {})[p.month] = p }
+    return m
+  }, [payments])
+
+  const itemTotal = (id) => Object.values(payMap[id] || {}).reduce((s, p) => s + Number(p.amount), 0)
+  const monthTotal = (mo) => payments.filter((p) => p.month === mo).reduce((s, p) => s + Number(p.amount), 0)
+  const anualTotal = payments.reduce((s, p) => s + Number(p.amount), 0)
+  const monthlyReserve = anualTotal / 12
 
   const opening = Number(piggyYear.find((y) => y.year === year)?.opening || 0)
-
   const deposits = useMemo(
     () => expenses.filter((e) => e.piggy_deposit && Number((e.date || '').slice(0, 4)) === year),
     [expenses, year])
   const depositsTotal = deposits.reduce((s, e) => s + Number(e.amount), 0)
-
-  const paidTotal = yearTaxes.filter((t) => t.paid).reduce((s, t) => s + Number(t.amount), 0)
+  const paidTotal = payments.filter((p) => p.paid).reduce((s, p) => s + Number(p.amount), 0)
   const balance = opening + depositsTotal - paidTotal
 
-  const anualTotal = yearTaxes.reduce((s, t) => s + Number(t.amount), 0)
-  const monthlyReserve = anualTotal / 12
+  const pendingTransfers = payments
+    .filter((p) => p.paid && !p.transferred)
+    .map((p) => ({ ...p, name: items.find((i) => i.id === p.tax_id)?.name }))
 
-  const pendingTransfers = yearTaxes.filter((t) => t.paid && !t.transferred)
-
-  const num = (v) => Number(String(v).replace(',', '.')) || 0
-
-  // ---------- saldo inicial ----------
+  // ---------- acoes ----------
   const [editOpen, setEditOpen] = useState(false)
   const [openVal, setOpenVal] = useState('')
   const saveOpening = async () => {
     await supabase.from('piggy_year').upsert({ year, opening: num(openVal) })
     setEditOpen(false); setOpenVal(''); reload()
   }
+
+  const togglePaid = async (p) => {
+    await supabase.from('tax_payments').update({
+      paid: !p.paid, paid_date: !p.paid ? todayISO() : null,
+      transferred: !p.paid ? p.transferred : false,
+    }).eq('id', p.id)
+    reload()
+  }
+  const toggleTransferred = async (p) => {
+    await supabase.from('tax_payments').update({ transferred: !p.transferred }).eq('id', p.id); reload()
+  }
+
+  // adicionar vencimento (cria taxa se nome novo)
+  const [vName, setVName] = useState('')
+  const [vMonth, setVMonth] = useState('')
+  const [vAmount, setVAmount] = useState('')
+  const addVencimento = async (e) => {
+    e.preventDefault()
+    if (!vName || !vMonth || !vAmount) return
+    let item = items.find((i) => i.name.toLowerCase() === vName.trim().toLowerCase())
+    let taxId = item?.id
+    if (!taxId) {
+      const { data } = await supabase.from('house_taxes').insert({ year, name: vName.trim() }).select().single()
+      taxId = data?.id
+    }
+    if (taxId) await supabase.from('tax_payments').insert({ tax_id: taxId, month: Number(vMonth), amount: num(vAmount) })
+    setVAmount(''); reload()
+  }
+  const delPayment = async (id) => { await supabase.from('tax_payments').delete().eq('id', id); reload() }
+  const delItem = async (id) => { await supabase.from('house_taxes').delete().eq('id', id); reload() }
 
   // ---------- deposito ----------
   const [depDate, setDepDate] = useState(todayISO())
@@ -59,30 +100,6 @@ export default function PiggyBank({ expenses, houseTaxes, piggyYear, categories,
   }
   const delDeposit = async (id) => { await supabase.from('expenses').delete().eq('id', id); reload() }
 
-  // ---------- taxas ----------
-  const [tName, setTName] = useState('')
-  const [tAmount, setTAmount] = useState('')
-  const [tMonth, setTMonth] = useState('')
-  const addTax = async (e) => {
-    e.preventDefault()
-    if (!tName || !tAmount) return
-    await supabase.from('house_taxes').insert({
-      year, name: tName, amount: num(tAmount), due_month: tMonth ? Number(tMonth) : null,
-    })
-    setTName(''); setTAmount(''); setTMonth(''); reload()
-  }
-  const togglePaid = async (t) => {
-    await supabase.from('house_taxes').update({
-      paid: !t.paid, paid_date: !t.paid ? todayISO() : null,
-      transferred: !t.paid ? t.transferred : false,
-    }).eq('id', t.id)
-    reload()
-  }
-  const toggleTransferred = async (t) => {
-    await supabase.from('house_taxes').update({ transferred: !t.transferred }).eq('id', t.id); reload()
-  }
-  const delTax = async (id) => { await supabase.from('house_taxes').delete().eq('id', id); reload() }
-
   return (
     <>
       <div className="month-nav">
@@ -96,33 +113,121 @@ export default function PiggyBank({ expenses, houseTaxes, piggyYear, categories,
           <div className="label">Saldo do cofrinho</div>
           <div className="value" style={{ color: balance < 0 ? 'var(--danger)' : 'var(--teal)', fontSize: 22 }}>{money(balance)}</div>
           <div className="meta" style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>
-            inicial {money(opening)} + depósitos {money(depositsTotal)} − pago {money(paidTotal)}
+            inicial {money(opening)} + dep. {money(depositsTotal)} − pago {money(paidTotal)}
           </div>
         </div>
         <div className="box">
           <div className="label">Reserva mensal (fixos)</div>
           <div className="value" style={{ fontSize: 22 }}>{money(monthlyReserve)}</div>
-          <div className="meta" style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>
-            {money(anualTotal)} no ano ÷ 12
-          </div>
+          <div className="meta" style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>{money(anualTotal)} no ano ÷ 12</div>
         </div>
       </div>
 
       {pendingTransfers.length > 0 && (
         <div className="warn-banner">
-          🔔 Transferências pendentes do cofrinho → conta:
+          🔔 Transferências pendentes (cofrinho → conta):
           <div style={{ marginTop: 8 }}>
-            {pendingTransfers.map((t) => (
-              <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
-                <span>{t.name} — <b>{money(t.amount)}</b></span>
-                <button className="btn btn-sm" onClick={() => toggleTransferred(t)}>já transferi ✓</button>
+            {pendingTransfers.map((p) => (
+              <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
+                <span>{p.name} ({MESES[p.month - 1]}) — <b>{money(p.amount)}</b></span>
+                <button className="btn btn-sm" onClick={() => toggleTransferred(p)}>já transferi ✓</button>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* Saldo inicial + Deposito */}
+      {/* ---------- MATRIZ DE VENCIMENTOS ---------- */}
+      <div className="card">
+        <h2>Calendário de vencimentos {year}</h2>
+        {items.length === 0 ? (
+          <div className="empty">Nenhuma taxa. Adicione um vencimento abaixo.</div>
+        ) : (
+          <div className="matrix-wrap">
+            <table className="matrix">
+              <thead>
+                <tr>
+                  <th className="name">Taxa</th>
+                  {MESES.map((m) => <th key={m}>{m}</th>)}
+                  <th>total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((it) => (
+                  <tr key={it.id}>
+                    <td className="name">{it.name}</td>
+                    {MESES.map((m, idx) => {
+                      const p = payMap[it.id]?.[idx + 1]
+                      if (!p) return <td key={m} className="cell" />
+                      const cls = p.paid ? (p.transferred ? 'cell has paid' : 'cell has pend') : 'cell has'
+                      return (
+                        <td key={m} className={cls} title={p.paid ? 'pago (toque p/ desmarcar)' : 'toque p/ marcar pago'}
+                          onClick={() => togglePaid(p)}>
+                          {money(p.amount).replace(/\s?€/, '')}
+                        </td>
+                      )
+                    })}
+                    <td className="tot">{money(itemTotal(it.id)).replace(/\s?€/, '')}</td>
+                  </tr>
+                ))}
+                <tr className="total-row">
+                  <td className="name">Soma</td>
+                  {MESES.map((m, idx) => <td key={m}>{monthTotal(idx + 1) ? money(monthTotal(idx + 1)).replace(/\s?€/, '') : ''}</td>)}
+                  <td className="tot">{money(anualTotal).replace(/\s?€/, '')}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        )}
+        <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 10 }}>
+          Toque numa célula para marcar/desmarcar como <b>paga</b>. Verde = paga e transferida · amarelo = paga, transferência pendente.
+        </p>
+      </div>
+
+      {/* ---------- ADICIONAR VENCIMENTO ---------- */}
+      <div className="card">
+        <h2>Adicionar vencimento</h2>
+        <form onSubmit={addVencimento}>
+          <div className="field"><label>Taxa</label>
+            <input list="taxlist" value={vName} onChange={(e) => setVName(e.target.value)} placeholder="ex: Seguro Carro" />
+            <datalist id="taxlist">{items.map((i) => <option key={i.id} value={i.name} />)}</datalist>
+          </div>
+          <div className="row">
+            <div className="field"><label>Mês</label>
+              <select value={vMonth} onChange={(e) => setVMonth(e.target.value)}>
+                <option value="">—</option>
+                {MESES.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
+              </select></div>
+            <div className="field"><label>Valor (€)</label>
+              <input inputMode="decimal" value={vAmount} placeholder="0,00" onChange={(e) => setVAmount(e.target.value)} /></div>
+          </div>
+          <button className="btn btn-ghost">Adicionar vencimento</button>
+        </form>
+
+        {items.length > 0 && (
+          <div style={{ marginTop: 14, borderTop: '1px solid var(--border)', paddingTop: 10 }}>
+            <h3>Gerir taxas</h3>
+            {items.map((it) => (
+              <div key={it.id} style={{ marginBottom: 10 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <b>{it.name}</b>
+                  <button className="x" onClick={() => delItem(it.id)}>✕ taxa</button>
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
+                  {Object.values(payMap[it.id] || {}).sort((a, b) => a.month - b.month).map((p) => (
+                    <span key={p.id} className="tag" style={{ display: 'inline-flex', gap: 4, alignItems: 'center' }}>
+                      {MESES[p.month - 1]} {money(p.amount)}
+                      <span style={{ cursor: 'pointer', color: 'var(--danger)' }} onClick={() => delPayment(p.id)}>✕</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ---------- SALDO INICIAL ---------- */}
       <div className="card">
         <h2 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           Saldo inicial do ano
@@ -141,6 +246,7 @@ export default function PiggyBank({ expenses, houseTaxes, piggyYear, categories,
         )}
       </div>
 
+      {/* ---------- DEPÓSITO ---------- */}
       <div className="card">
         <h2>Registrar depósito no cofrinho</h2>
         <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: -4 }}>
@@ -168,51 +274,6 @@ export default function PiggyBank({ expenses, houseTaxes, piggyYear, categories,
             ))}
           </div>
         )}
-      </div>
-
-      {/* Taxas da casa */}
-      <div className="card">
-        <h2>Taxas da casa {year}</h2>
-        {yearTaxes.length === 0 ? (
-          <div className="empty">Nenhuma taxa cadastrada neste ano.</div>
-        ) : (
-          yearTaxes.map((t) => (
-            <div className="item" key={t.id}>
-              <div className="info">
-                <div>
-                  <div className="desc">
-                    {t.name}
-                    {t.due_month && <span className="tag" style={{ marginLeft: 6 }}>{MESES[t.due_month - 1]}</span>}
-                    {t.paid && !t.transferred && <span className="tag" style={{ marginLeft: 6, background: '#fef3c7', color: '#92400e' }}>transf. pendente</span>}
-                    {t.paid && t.transferred && <span className="tag" style={{ marginLeft: 6, background: '#dcfce7', color: '#166534' }}>ok</span>}
-                  </div>
-                  <div className="meta">reserva/mês {money(Number(t.amount) / 12)}</div>
-                </div>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span className="amt">{money(t.amount)}</span>
-                <button className="btn btn-sm" style={t.paid ? { background: '#dcfce7', color: '#166534' } : {}} onClick={() => togglePaid(t)}>
-                  {t.paid ? 'pago ✓' : 'pagar'}
-                </button>
-                <button className="x" onClick={() => delTax(t.id)}>✕</button>
-              </div>
-            </div>
-          ))
-        )}
-        <form onSubmit={addTax} style={{ marginTop: 12, borderTop: '1px solid var(--border)', paddingTop: 12 }}>
-          <div className="field"><label>Nome da taxa</label>
-            <input value={tName} onChange={(e) => setTName(e.target.value)} placeholder="ex: Seguro Carro" /></div>
-          <div className="row">
-            <div className="field"><label>Valor (€)</label>
-              <input inputMode="decimal" value={tAmount} placeholder="0,00" onChange={(e) => setTAmount(e.target.value)} /></div>
-            <div className="field"><label>Mês previsto</label>
-              <select value={tMonth} onChange={(e) => setTMonth(e.target.value)}>
-                <option value="">—</option>
-                {MESES.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
-              </select></div>
-          </div>
-          <button className="btn btn-ghost">Adicionar taxa</button>
-        </form>
       </div>
     </>
   )

@@ -127,3 +127,17 @@ input, select { font-family: inherit; }
 
 .chart-box { width: 100%; height: 240px; }
 .warn-banner { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; padding: 12px; border-radius: 10px; font-size: 13px; margin-bottom: 16px; }
+
+/* ---- Matriz de vencimentos (cofrinho) ---- */
+.matrix-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0 -4px; }
+.matrix { border-collapse: collapse; font-size: 12px; white-space: nowrap; min-width: 100%; }
+.matrix th, .matrix td { border: 1px solid var(--border); padding: 7px 9px; text-align: right; }
+.matrix th { background: #f1f5f9; color: var(--muted); font-weight: 600; font-size: 11px; text-transform: uppercase; }
+.matrix th.name, .matrix td.name { text-align: left; position: sticky; left: 0; background: var(--card); z-index: 1; font-weight: 600; }
+.matrix th.name { background: #f1f5f9; }
+.matrix td.cell { cursor: pointer; color: var(--muted); }
+.matrix td.cell.has { color: var(--text); }
+.matrix td.cell.paid { background: #dcfce7; color: #166534; font-weight: 600; }
+.matrix td.cell.pend { background: #fffbeb; color: #92400e; }
+.matrix tr.total-row td { background: #f8fafc; font-weight: 700; }
+.matrix td.tot { font-weight: 700; }
