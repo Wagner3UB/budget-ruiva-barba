@@ -5,7 +5,6 @@ import Dashboard from './components/Dashboard'
 import Expenses from './components/Expenses'
 import Income from './components/Income'
 import Budgets from './components/Budgets'
-import Goals from './components/Goals'
 import PiggyBank from './components/PiggyBank'
 import { monthKey } from './lib/helpers'
 
@@ -14,7 +13,6 @@ const TABS = [
   { id: 'gastos', label: 'Gastos', ic: '🧾' },
   { id: 'entradas', label: 'Entradas', ic: '💰' },
   { id: 'orcamento', label: 'Orçam.', ic: '🎯' },
-  { id: 'metas', label: 'Metas', ic: '⭐' },
   { id: 'cofrinho', label: 'Casa', ic: '🏠' },
   { id: 'nathi', label: 'Nathi', ic: '🍓' },
 ]
@@ -118,7 +116,6 @@ export default function App() {
         {tab === 'gastos' && <Expenses {...shared} />}
         {tab === 'entradas' && <Income {...shared} />}
         {tab === 'orcamento' && <Budgets {...shared} />}
-        {tab === 'metas' && <Goals {...shared} />}
         {tab === 'cofrinho' && <PiggyBank piggy="casa" {...shared} />}
         {tab === 'nathi' && <PiggyBank piggy="nathi" {...shared} />}
       </div>
