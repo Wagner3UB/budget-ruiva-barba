@@ -81,8 +81,12 @@ export default function PiggyBank({ piggy = 'casa', expenses, houseTaxes, taxPay
     if (taxId) await supabase.from('tax_payments').insert({ tax_id: taxId, month: Number(vMonth), amount: num(vAmount) })
     setVAmount(''); reload()
   }
-  const delPayment = async (id) => { await supabase.from('tax_payments').delete().eq('id', id); reload() }
-  const delItem = async (id) => { await supabase.from('house_taxes').delete().eq('id', id); reload() }
+  const delPayment = async (p) => {
+    await supabase.from('tax_payments').delete().eq('id', p.id)
+    const others = payments.filter((x) => x.tax_id === p.tax_id && x.id !== p.id)
+    if (others.length === 0) await supabase.from('house_taxes').delete().eq('id', p.tax_id)
+    reload()
+  }
 
   // ---------- deposito ----------
   const [depDate, setDepDate] = useState(todayISO())
@@ -217,7 +221,6 @@ export default function PiggyBank({ piggy = 'casa', expenses, houseTaxes, taxPay
               <div key={it.id} style={{ marginBottom: 10 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <b>{it.name}</b>
-                  <button className="x" onClick={() => delItem(it.id)}>✕ taxa</button>
                 </div>
                 <div style={{ marginTop: 4 }}>
                   {Object.values(payMap[it.id] || {}).sort((a, b) => a.month - b.month).map((p) => (
@@ -230,7 +233,7 @@ export default function PiggyBank({ piggy = 'casa', expenses, houseTaxes, taxPay
                           <button className="btn btn-sm btn-ghost"
                             onClick={() => toggleTransferred(p)}>{p.transferred ? 'transf. ✓' : 'transferir'}</button>
                         )}
-                        <button className="x" onClick={() => delPayment(p.id)}>✕</button>
+                        <button className="x" onClick={() => delPayment(p)}>✕</button>
                       </span>
                     </div>
                   ))}
