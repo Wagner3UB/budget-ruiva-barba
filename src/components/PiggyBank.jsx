@@ -138,7 +138,7 @@ export default function PiggyBank({ expenses, houseTaxes, taxPayments, piggyYear
       )}
 
       {/* ---------- MATRIZ DE VENCIMENTOS ---------- */}
-      <div className="card">
+      <div className="card wide">
         <h2>Calendário de vencimentos {year}</h2>
         {items.length === 0 ? (
           <div className="empty">Nenhuma taxa. Adicione um vencimento abaixo.</div>

@@ -141,3 +141,35 @@ input, select { font-family: inherit; }
 .matrix td.cell.pend { background: #fffbeb; color: #92400e; }
 .matrix tr.total-row td { background: #f8fafc; font-weight: 700; }
 .matrix td.tot { font-weight: 700; }
+
+/* ============ DESKTOP: usa o monitor inteiro ============ */
+@media (min-width: 1024px) {
+  .app { max-width: none; padding-left: 28px; padding-right: 28px; padding-bottom: 110px; }
+  .topbar { border-radius: 0 0 14px 14px; }
+
+  /* cards fluem em várias colunas (masonry) preenchendo a largura */
+  .content { column-width: 360px; column-gap: 20px; padding: 20px 0; }
+  .content > * { break-inside: avoid; margin-bottom: 20px; }
+
+  /* estes ocupam a largura toda (linha inteira) */
+  .content > .month-nav,
+  .content > .summary,
+  .content > .warn-banner,
+  .content > .card.wide { column-span: all; }
+
+  /* KPIs em linha, aproveitando a largura */
+  .summary { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+
+  /* barra de abas ocupa a largura inteira */
+  .tabbar { max-width: none; }
+  .tabbar button { padding: 12px 0 16px; font-size: 12px; }
+
+  /* gráficos um pouco mais altos no desktop */
+  .chart-box { height: 300px; }
+}
+
+/* Telas muito largas: limita as colunas de conteúdo pra não ficar exagerado,
+   mas mantém a matriz/kpis full-width */
+@media (min-width: 1600px) {
+  .content { column-width: 420px; }
+}
