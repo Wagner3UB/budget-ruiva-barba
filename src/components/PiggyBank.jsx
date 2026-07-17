@@ -12,6 +12,11 @@ const CFG = {
 export default function PiggyBank({ piggy = 'casa', expenses, houseTaxes, taxPayments, piggyYear, categories, reload }) {
   const cfg = CFG[piggy] || CFG.casa
   const [year, setYear] = useState(new Date().getFullYear())
+  const [pop, setPop] = useState(null) // { text, x, y }
+  const showPop = (ev, text) => {
+    const r = ev.currentTarget.getBoundingClientRect()
+    setPop({ text, x: r.left + r.width / 2, y: r.top })
+  }
   const num = (v) => Number(String(v).replace(',', '.')) || 0
 
   const items = useMemo(
@@ -129,6 +134,9 @@ export default function PiggyBank({ piggy = 'casa', expenses, houseTaxes, taxPay
 
   return (
     <>
+      {pop && (
+        <div className="note-pop" style={{ left: pop.x, top: pop.y }}>{pop.text}</div>
+      )}
       <div className="month-nav">
         <button onClick={() => setYear((y) => y - 1)}>‹</button>
         <span className="label">Ano {year}</span>
@@ -188,9 +196,13 @@ export default function PiggyBank({ piggy = 'casa', expenses, houseTaxes, taxPay
                       if (!p) return <td key={m} className="cell" />
                       const cls = p.paid ? (p.transferred ? 'cell has paid' : 'cell has pend') : 'cell has'
                       return (
-                        <td key={m} className={cls} title={(p.note ? p.note + ' · ' : '') + (p.paid ? 'pago (toque p/ desmarcar)' : 'toque p/ marcar pago')}
-                          onClick={() => togglePaid(p)}>
+                        <td key={m} className={cls}
+                          title={p.paid ? 'pago (toque p/ desmarcar)' : 'toque p/ marcar pago'}
+                          onClick={() => togglePaid(p)}
+                          onMouseEnter={p.note ? (ev) => showPop(ev, p.note) : undefined}
+                          onMouseLeave={p.note ? () => setPop(null) : undefined}>
                           {money(p.amount).replace(/\s?€/, '')}
+                          {p.note && <sup className="info-i">ⓘ</sup>}
                         </td>
                       )
                     })}
