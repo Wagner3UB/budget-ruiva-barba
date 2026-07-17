@@ -219,12 +219,20 @@ export default function PiggyBank({ piggy = 'casa', expenses, houseTaxes, taxPay
                   <b>{it.name}</b>
                   <button className="x" onClick={() => delItem(it.id)}>✕ taxa</button>
                 </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
+                <div style={{ marginTop: 4 }}>
                   {Object.values(payMap[it.id] || {}).sort((a, b) => a.month - b.month).map((p) => (
-                    <span key={p.id} className="tag" style={{ display: 'inline-flex', gap: 4, alignItems: 'center' }}>
-                      {MESES[p.month - 1]} {money(p.amount)}
-                      <span style={{ cursor: 'pointer', color: 'var(--danger)' }} onClick={() => delPayment(p.id)}>✕</span>
-                    </span>
+                    <div className="item" key={p.id} style={{ padding: '8px 0' }}>
+                      <span className="desc">{MESES[p.month - 1]} — {money(p.amount)}</span>
+                      <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                        <button className="btn btn-sm" style={p.paid ? { background: '#dcfce7', color: '#166534' } : {}}
+                          onClick={() => togglePaid(p)}>{p.paid ? 'pago ✓' : 'pagar'}</button>
+                        {p.paid && (
+                          <button className="btn btn-sm btn-ghost"
+                            onClick={() => toggleTransferred(p)}>{p.transferred ? 'transf. ✓' : 'transferir'}</button>
+                        )}
+                        <button className="x" onClick={() => delPayment(p.id)}>✕</button>
+                      </span>
+                    </div>
                   ))}
                 </div>
               </div>
