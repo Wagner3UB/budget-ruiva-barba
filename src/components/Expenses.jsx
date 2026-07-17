@@ -19,21 +19,34 @@ export default function Expenses({ categories, monthExpenses, accounts, fixedExp
   const [payStatus, setPayStatus] = useState('Sim')
   const [busy, setBusy] = useState(false)
   const amountRef = useRef(null)
+  const [editingExpId, setEditingExpId] = useState(null)
 
   const addExpense = async (e) => {
     e.preventDefault()
     if (!categoryId || !amount) return
     setBusy(true)
-    await supabase.from('expenses').insert({
+    const payload = {
       date, category_id: categoryId,
       description: place || catById[categoryId]?.name || '',
       place, amount: parseAmount(amount),
-      paid_by: paidBy, account: account || null,
-      is_fixed: false, pay_status: payStatus,
-    })
-    setPlace(''); setAmount(''); setPayStatus('Sim'); setBusy(false); reload()
-    amountRef.current?.focus()
+      paid_by: paidBy, account: account || null, pay_status: payStatus,
+    }
+    if (editingExpId) {
+      await supabase.from('expenses').update(payload).eq('id', editingExpId)
+      setEditingExpId(null); setPlace(''); setAmount(''); setPayStatus('Sim'); setBusy(false); reload()
+    } else {
+      await supabase.from('expenses').insert({ ...payload, is_fixed: false })
+      setPlace(''); setAmount(''); setPayStatus('Sim'); setBusy(false); reload()
+      amountRef.current?.focus()
+    }
   }
+  const editExpense = (e) => {
+    setDate(e.date); setCategoryId(e.category_id || ''); setPlace(e.place || '')
+    setAmount(String(e.amount)); setPaidBy(e.paid_by || 'Gui'); setAccount(e.account || '')
+    setPayStatus(e.pay_status || 'Não'); setEditingExpId(e.id)
+    document.getElementById('gasto-form')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }
+  const cancelExpEdit = () => { setEditingExpId(null); setPlace(''); setAmount(''); setPayStatus('Sim') }
   const removeExpense = async (id) => { await supabase.from('expenses').delete().eq('id', id); reload() }
 
   // ---------- Fixos do mes ----------
@@ -236,8 +249,8 @@ export default function Expenses({ categories, monthExpenses, accounts, fixedExp
 
       {/* ---------- NOVO GASTO AVULSO ---------- */}
       <div className="card">
-        <h2>Novo gasto (avulso)</h2>
-        <form onSubmit={addExpense}>
+        <h2>{editingExpId ? 'Editar gasto' : 'Novo gasto (avulso)'}</h2>
+        <form id="gasto-form" onSubmit={addExpense}>
           <div className="row">
             <div className="field"><label>Data</label>
               <input type="date" value={date} onChange={(e) => setDate(e.target.value)} required /></div>
@@ -260,7 +273,10 @@ export default function Expenses({ categories, monthExpenses, accounts, fixedExp
             <input value={place} onChange={(e) => setPlace(e.target.value)} placeholder="ex: Penny, Amazon…" /></div>
           <div className="field"><label>Pago?</label>
             <select value={payStatus} onChange={(e) => setPayStatus(e.target.value)}>{PAY.map((p) => <option key={p}>{p}</option>)}</select></div>
-          <button className="btn" disabled={busy}>{busy ? 'Salvando…' : 'Adicionar gasto'}</button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className="btn" style={{ flex: 1 }} disabled={busy}>{busy ? 'Salvando…' : editingExpId ? 'Salvar alteração' : 'Adicionar gasto'}</button>
+            {editingExpId && <button type="button" className="btn btn-ghost" style={{ flex: 0, padding: '13px 16px' }} onClick={cancelExpEdit}>Cancelar</button>}
+          </div>
         </form>
       </div>
 
@@ -305,6 +321,7 @@ export default function Expenses({ categories, monthExpenses, accounts, fixedExp
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <span className="amt" style={st === 'Não contabilizado' ? { textDecoration: 'line-through', color: 'var(--muted)' } : null}>{money(e.amount)}</span>
+                  <button className="btn btn-sm btn-ghost" title="editar" onClick={() => editExpense(e)}>✏️</button>
                   <button className="x" onClick={() => removeExpense(e.id)}>✕</button>
                 </div>
               </div>
