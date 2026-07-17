@@ -69,17 +69,34 @@ export default function PiggyBank({ piggy = 'casa', expenses, houseTaxes, taxPay
   const [vName, setVName] = useState('')
   const [vMonth, setVMonth] = useState('')
   const [vAmount, setVAmount] = useState('')
+  const [vNote, setVNote] = useState('')
+  const [editingId, setEditingId] = useState(null)
+  const [editingTaxId, setEditingTaxId] = useState(null)
+  const clearForm = () => { setVName(''); setVMonth(''); setVAmount(''); setVNote(''); setEditingId(null); setEditingTaxId(null) }
   const addVencimento = async (e) => {
     e.preventDefault()
     if (!vName || !vMonth || !vAmount) return
-    let item = items.find((i) => i.name.toLowerCase() === vName.trim().toLowerCase())
-    let taxId = item?.id
-    if (!taxId) {
-      const { data } = await supabase.from('house_taxes').insert({ year, name: vName.trim(), piggy }).select().single()
-      taxId = data?.id
+    if (editingId) {
+      await supabase.from('tax_payments').update({ month: Number(vMonth), amount: num(vAmount), note: vNote || null }).eq('id', editingId)
+      if (editingTaxId) await supabase.from('house_taxes').update({ name: vName.trim() }).eq('id', editingTaxId)
+      clearForm()
+    } else {
+      let item = items.find((i) => i.name.toLowerCase() === vName.trim().toLowerCase())
+      let taxId = item?.id
+      if (!taxId) {
+        const { data } = await supabase.from('house_taxes').insert({ year, name: vName.trim(), piggy }).select().single()
+        taxId = data?.id
+      }
+      if (taxId) await supabase.from('tax_payments').insert({ tax_id: taxId, month: Number(vMonth), amount: num(vAmount), note: vNote || null })
+      setVAmount(''); setVNote('')
     }
-    if (taxId) await supabase.from('tax_payments').insert({ tax_id: taxId, month: Number(vMonth), amount: num(vAmount) })
-    setVAmount(''); reload()
+    reload()
+  }
+  const editPayment = (p) => {
+    const item = items.find((i) => i.id === p.tax_id)
+    setVName(item?.name || ''); setVMonth(String(p.month)); setVAmount(String(p.amount)); setVNote(p.note || '')
+    setEditingId(p.id); setEditingTaxId(p.tax_id)
+    document.getElementById('venc-form')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }
   const delPayment = async (p) => {
     await supabase.from('tax_payments').delete().eq('id', p.id)
@@ -171,7 +188,7 @@ export default function PiggyBank({ piggy = 'casa', expenses, houseTaxes, taxPay
                       if (!p) return <td key={m} className="cell" />
                       const cls = p.paid ? (p.transferred ? 'cell has paid' : 'cell has pend') : 'cell has'
                       return (
-                        <td key={m} className={cls} title={p.paid ? 'pago (toque p/ desmarcar)' : 'toque p/ marcar pago'}
+                        <td key={m} className={cls} title={(p.note ? p.note + ' · ' : '') + (p.paid ? 'pago (toque p/ desmarcar)' : 'toque p/ marcar pago')}
                           onClick={() => togglePaid(p)}>
                           {money(p.amount).replace(/\s?€/, '')}
                         </td>
@@ -196,8 +213,8 @@ export default function PiggyBank({ piggy = 'casa', expenses, houseTaxes, taxPay
 
       {/* ---------- ADICIONAR VENCIMENTO ---------- */}
       <div className="card">
-        <h2>Adicionar vencimento</h2>
-        <form onSubmit={addVencimento}>
+        <h2>{editingId ? 'Editar vencimento' : 'Adicionar vencimento'}</h2>
+        <form id="venc-form" onSubmit={addVencimento}>
           <div className="field"><label>Taxa</label>
             <input list="taxlist" value={vName} onChange={(e) => setVName(e.target.value)} placeholder="ex: Seguro Carro" />
             <datalist id="taxlist">{items.map((i) => <option key={i.id} value={i.name} />)}</datalist>
@@ -211,7 +228,12 @@ export default function PiggyBank({ piggy = 'casa', expenses, houseTaxes, taxPay
             <div className="field"><label>Valor (€)</label>
               <input inputMode="decimal" value={vAmount} placeholder="0,00" onChange={(e) => setVAmount(e.target.value)} /></div>
           </div>
-          <button className="btn btn-ghost">Adicionar vencimento</button>
+          <div className="field"><label>Descrição (opcional)</label>
+            <input value={vNote} onChange={(e) => setVNote(e.target.value)} placeholder="dica que aparece ao passar no valor" /></div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className="btn btn-ghost" style={{ flex: 1 }}>{editingId ? 'Salvar alteração' : 'Adicionar vencimento'}</button>
+            {editingId && <button type="button" className="btn btn-ghost" style={{ flex: 0, padding: '13px 16px' }} onClick={clearForm}>Cancelar</button>}
+          </div>
         </form>
 
         {items.length > 0 && (
@@ -227,6 +249,7 @@ export default function PiggyBank({ piggy = 'casa', expenses, houseTaxes, taxPay
                     <div className="item" key={p.id} style={{ padding: '8px 0' }}>
                       <span className="desc">{MESES[p.month - 1]} — {money(p.amount)}</span>
                       <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                        <button className="btn btn-sm btn-ghost" title="editar" onClick={() => editPayment(p)}>✏️</button>
                         <button className="btn btn-sm" style={p.paid ? { background: '#dcfce7', color: '#166534' } : {}}
                           onClick={() => togglePaid(p)}>{p.paid ? 'pago ✓' : 'pagar'}</button>
                         {p.paid && (
