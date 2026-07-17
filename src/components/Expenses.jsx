@@ -104,6 +104,11 @@ export default function Expenses({ categories, monthExpenses, accounts, fixedExp
   // ---------- Contas ----------
   const [manageAcc, setManageAcc] = useState(false)
   const [newAcc, setNewAcc] = useState('')
+
+  // filtros/ordenacao da lista
+  const [fPerson, setFPerson] = useState('')
+  const [fAccount, setFAccount] = useState('')
+  const [sortBy, setSortBy] = useState('data')
   const addAccount = async (e) => {
     e.preventDefault()
     if (!newAcc.trim()) return
@@ -111,7 +116,16 @@ export default function Expenses({ categories, monthExpenses, accounts, fixedExp
   }
   const delAccount = async (id) => { await supabase.from('accounts').delete().eq('id', id); reload() }
 
-  const variableExpenses = monthExpenses.filter((e) => !e.fixed_id && !e.piggy_deposit)
+  const nameOf = (e) => e.place || catById[e.category_id]?.name || ''
+  let variableExpenses = monthExpenses.filter((e) => !e.fixed_id && !e.piggy_deposit)
+  if (fPerson) variableExpenses = variableExpenses.filter((e) => e.paid_by === fPerson)
+  if (fAccount) variableExpenses = variableExpenses.filter((e) => (e.account || '') === fAccount)
+  variableExpenses = [...variableExpenses].sort((a, b) => {
+    if (sortBy === 'valor_desc') return Number(b.amount) - Number(a.amount)
+    if (sortBy === 'valor_asc') return Number(a.amount) - Number(b.amount)
+    if (sortBy === 'az') return nameOf(a).localeCompare(nameOf(b))
+    return (b.date || '').localeCompare(a.date || '')
+  })
   const fixedPaidTotal = Object.values(paidFixedThisMonth).reduce((s, e) => s + Number(e.amount), 0)
   const fixedPendingTotal = monthFixed
     .filter((f) => !paidFixedThisMonth[f.id])
@@ -253,6 +267,22 @@ export default function Expenses({ categories, monthExpenses, accounts, fixedExp
       {/* ---------- LISTA DE AVULSOS ---------- */}
       <div className="card">
         <h2>Gastos avulsos do mês</h2>
+        <div className="filters">
+          <select value={fPerson} onChange={(e) => setFPerson(e.target.value)}>
+            <option value="">Quem: todos</option>
+            {WHO.map((w) => <option key={w} value={w}>{w}</option>)}
+          </select>
+          <select value={fAccount} onChange={(e) => setFAccount(e.target.value)}>
+            <option value="">Banco: todos</option>
+            {accounts.map((a) => <option key={a.id} value={a.name}>{a.name}</option>)}
+          </select>
+          <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+            <option value="data">Data (recente)</option>
+            <option value="valor_desc">Valor (maior)</option>
+            <option value="valor_asc">Valor (menor)</option>
+            <option value="az">A → Z</option>
+          </select>
+        </div>
         {variableExpenses.length === 0 ? (
           <div className="empty">Nenhum gasto avulso neste mês.</div>
         ) : (

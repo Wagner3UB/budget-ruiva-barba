@@ -196,3 +196,10 @@ input, select { font-family: inherit; }
 .matrix th:last-child, .matrix td.tot { width: 96px; }
 /* as 12 colunas de mês dividem o restante igualmente (table-layout fixed) */
 .matrix td.cell, .matrix thead th:not(.name):not(:last-child) { overflow: hidden; text-overflow: ellipsis; }
+
+/* ---- Barra de filtros ---- */
+.filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.filters select {
+  flex: 1; min-width: 120px; padding: 8px 10px; font-size: 13px;
+  border: 1px solid var(--border); border-radius: 10px; background: #fff; color: var(--text);
+}
