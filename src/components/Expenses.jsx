@@ -160,38 +160,57 @@ export default function Expenses({ categories, monthExpenses, accounts, fixedExp
       <div className="card">
         <h2 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           Fixos do mês
-          <button className="btn btn-sm btn-ghost" onClick={() => setManageFixed((v) => !v)}>
-            {manageFixed ? 'fechar' : 'gerir'}
-          </button>
+          <button className="icon-btn" title={manageFixed ? 'fechar' : 'gerir'} onClick={() => setManageFixed((v) => !v)}>⚙️</button>
         </h2>
-        {monthFixed.length === 0 ? (
-          <div className="empty">Nenhum gasto fixo. Toque em "gerir" para cadastrar.</div>
+        {(manageFixed ? fixedExpenses.length : monthFixed.length) === 0 ? (
+          <div className="empty">Nenhum gasto fixo. Toque na engrenagem para cadastrar.</div>
         ) : (
           <>
             <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 8 }}>
               Pago: {money(fixedPaidTotal)} · A pagar: {money(fixedPendingTotal)}
             </div>
-            {monthFixed.map((f) => {
+            {(manageFixed
+              ? [...fixedExpenses].sort((a, b) => (catById[a.category_id]?.name || '').localeCompare(catById[b.category_id]?.name || ''))
+              : monthFixed
+            ).map((f) => {
               const paidRow = paidFixedThisMonth[f.id]
               const isPaid = Boolean(paidRow)
               const shown = isPaid ? Number(paidRow.amount) : Number(f.amount)
               const i = categories.findIndex((x) => x.id === f.category_id)
+              const activeNow = fixedActiveIn(f, month)
               return (
-                <div className="item" key={f.id}>
-                  <div className="info">
-                    <span className="dot" style={{ background: catById[f.category_id]?.color || PALETTE[(i + 12) % PALETTE.length] }} />
-                    <div>
-                      <div className="desc">{catById[f.category_id]?.name || f.description}</div>
-                      <div className="meta">dia {f.day_of_month} · {f.paid_by}{f.account ? ` · ${f.account}` : ''}</div>
+                <div key={f.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                  <div className="item" style={{ borderBottom: 'none', opacity: f.active ? 1 : 0.55 }}>
+                    <div className="info">
+                      <span className="dot" style={{ background: catById[f.category_id]?.color || PALETTE[(i + 12) % PALETTE.length] }} />
+                      <div>
+                        <div className="desc">{catById[f.category_id]?.name || f.description}</div>
+                        <div className="meta">dia {f.day_of_month} · {f.paid_by}{f.account ? ` · ${f.account}` : ''}</div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span className="amt" style={isPaid ? null : { color: 'var(--muted)' }}>{money(shown)}</span>
+                      {activeNow && (
+                        <button className="btn btn-sm" style={isPaid ? { background: '#dcfce7', color: '#166534' } : {}}
+                          onClick={() => (isPaid ? unmarkPaid(f) : markPaid(f))}>
+                          {isPaid ? 'pago ✓' : 'marcar pago'}
+                        </button>
+                      )}
                     </div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span className="amt" style={isPaid ? null : { color: 'var(--muted)' }}>{money(shown)}</span>
-                    <button className="btn btn-sm" style={isPaid ? { background: '#dcfce7', color: '#166534' } : {}}
-                      onClick={() => (isPaid ? unmarkPaid(f) : markPaid(f))}>
-                      {isPaid ? 'pago ✓' : 'marcar pago'}
-                    </button>
-                  </div>
+                  {manageFixed && (
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '0 0 10px', fontSize: 12, color: 'var(--muted)', flexWrap: 'wrap' }}>
+                      <span>valor:</span>
+                      <input style={{ width: 90, padding: '4px 6px', border: '1px solid var(--border)', borderRadius: 6 }}
+                        inputMode="decimal" defaultValue={f.amount}
+                        onBlur={(e) => e.target.value != f.amount && updateFixedAmount(f, e.target.value)} />
+                      <span>fim:</span>
+                      <input type="month" defaultValue={f.end_month || ''} style={{ padding: '3px 6px', border: '1px solid var(--border)', borderRadius: 6 }}
+                        onChange={(e) => setFixedEnd(f, e.target.value)} />
+                      <button className="btn btn-sm btn-ghost" onClick={() => toggleFixedActive(f)}>{f.active ? 'desativar' : 'reativar'}</button>
+                      <button className="icon-btn" title="excluir" style={{ marginLeft: 'auto' }} onClick={() => delFixed(f.id)}>✕</button>
+                    </div>
+                  )}
                 </div>
               )
             })}
@@ -199,61 +218,36 @@ export default function Expenses({ categories, monthExpenses, accounts, fixedExp
         )}
 
         {manageFixed && (
-          <div style={{ marginTop: 14, borderTop: '1px solid var(--border)', paddingTop: 12 }}>
-            <h3>Gerir gastos fixos</h3>
-            {fixedExpenses.map((f) => (
-              <div key={f.id} style={{ padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontWeight: 600, opacity: f.active ? 1 : 0.5 }}>
-                    {catById[f.category_id]?.name || f.description}
-                  </span>
-                  <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                    <input style={{ width: 84, padding: '4px 6px', border: '1px solid var(--border)', borderRadius: 6 }}
-                      inputMode="decimal" defaultValue={f.amount}
-                      onBlur={(e) => e.target.value != f.amount && updateFixedAmount(f, e.target.value)} />
-                    <button className="x" onClick={() => delFixed(f.id)}>✕</button>
-                  </span>
-                </div>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 6, fontSize: 12, color: 'var(--muted)' }}>
-                  <span>fim:</span>
-                  <input type="month" defaultValue={f.end_month || ''} style={{ padding: '3px 6px', border: '1px solid var(--border)', borderRadius: 6 }}
-                    onChange={(e) => setFixedEnd(f, e.target.value)} />
-                  <button className="btn btn-sm btn-ghost" style={{ marginLeft: 'auto' }} onClick={() => toggleFixedActive(f)}>
-                    {f.active ? 'desativar' : 'reativar'}
-                  </button>
-                </div>
-              </div>
-            ))}
-            <form onSubmit={addFixed} style={{ marginTop: 12 }}>
-              <div className="field">
-                <label>Categoria</label>
-                <select value={fCat} onChange={(e) => setFCat(e.target.value)} required>
-                  <option value="">Selecione…</option>
-                  {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
-              </div>
-              <div className="row">
-                <div className="field"><label>Valor (€)</label>
-                  <input inputMode="decimal" value={fAmount} placeholder="0,00" onChange={(e) => setFAmount(e.target.value)} required /></div>
-                <div className="field"><label>Dia</label>
-                  <input inputMode="numeric" value={fDay} onChange={(e) => setFDay(e.target.value)} /></div>
-              </div>
-              <div className="row">
-                <div className="field"><label>Quem</label>
-                  <select value={fWho} onChange={(e) => setFWho(e.target.value)}>{WHO.map((w) => <option key={w}>{w}</option>)}</select></div>
-                <div className="field"><label>Conta</label>
-                  <select value={fAcc} onChange={(e) => setFAcc(e.target.value)}>
-                    <option value="">—</option>{accounts.map((a) => <option key={a.id} value={a.name}>{a.name}</option>)}</select></div>
-              </div>
-              <div className="row">
-                <div className="field"><label>Início</label>
-                  <input type="month" value={fStart} onChange={(e) => setFStart(e.target.value)} /></div>
-                <div className="field"><label>Fim (opcional)</label>
-                  <input type="month" value={fEnd} onChange={(e) => setFEnd(e.target.value)} /></div>
-              </div>
-              <button className="btn btn-ghost">Adicionar gasto fixo</button>
-            </form>
-          </div>
+          <form onSubmit={addFixed} style={{ marginTop: 14, borderTop: '1px solid var(--border)', paddingTop: 12 }}>
+            <h3>Adicionar gasto fixo</h3>
+            <div className="field">
+              <label>Categoria</label>
+              <select value={fCat} onChange={(e) => setFCat(e.target.value)} required>
+                <option value="">Selecione…</option>
+                {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+            <div className="row">
+              <div className="field"><label>Valor (€)</label>
+                <input inputMode="decimal" value={fAmount} placeholder="0,00" onChange={(e) => setFAmount(e.target.value)} required /></div>
+              <div className="field"><label>Dia</label>
+                <input inputMode="numeric" value={fDay} onChange={(e) => setFDay(e.target.value)} /></div>
+            </div>
+            <div className="row">
+              <div className="field"><label>Quem</label>
+                <select value={fWho} onChange={(e) => setFWho(e.target.value)}>{WHO.map((w) => <option key={w}>{w}</option>)}</select></div>
+              <div className="field"><label>Conta</label>
+                <select value={fAcc} onChange={(e) => setFAcc(e.target.value)}>
+                  <option value="">—</option>{accounts.map((a) => <option key={a.id} value={a.name}>{a.name}</option>)}</select></div>
+            </div>
+            <div className="row">
+              <div className="field"><label>Início</label>
+                <input type="month" value={fStart} onChange={(e) => setFStart(e.target.value)} /></div>
+              <div className="field"><label>Fim (opcional)</label>
+                <input type="month" value={fEnd} onChange={(e) => setFEnd(e.target.value)} /></div>
+            </div>
+            <button className="btn btn-ghost">Adicionar gasto fixo</button>
+          </form>
         )}
       </div>
 
