@@ -250,8 +250,9 @@ export default function PiggyBank({ piggy = 'casa', expenses, houseTaxes, taxPay
                       <span className="desc">{MESES[p.month - 1]} — {money(p.amount)}</span>
                       <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                         <button className="btn btn-sm btn-ghost" title="editar" onClick={() => editPayment(p)}>✏️</button>
-                        <button className="btn btn-sm" style={p.paid ? { background: '#dcfce7', color: '#166534' } : {}}
-                          onClick={() => togglePaid(p)}>{p.paid ? 'pago ✓' : 'pagar'}</button>
+                        <button className="btn btn-sm btn-ghost" title={p.paid ? 'pago — clique p/ desmarcar' : 'a pagar — clique p/ marcar'}
+                          style={{ color: p.paid ? 'var(--green)' : 'var(--danger)', fontWeight: 800, fontSize: 18, padding: '4px 12px' }}
+                          onClick={() => togglePaid(p)}>€</button>
                         {p.paid && (
                           <button className="btn btn-sm btn-ghost"
                             onClick={() => toggleTransferred(p)}>{p.transferred ? 'transf. ✓' : 'transferir'}</button>
