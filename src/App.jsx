@@ -6,6 +6,7 @@ import Expenses from './components/Expenses'
 import Income from './components/Income'
 import Budgets from './components/Budgets'
 import Goals from './components/Goals'
+import PiggyBank from './components/PiggyBank'
 import { monthKey } from './lib/helpers'
 
 const TABS = [
@@ -14,6 +15,7 @@ const TABS = [
   { id: 'entradas', label: 'Entradas', ic: '💰' },
   { id: 'orcamento', label: 'Orçam.', ic: '🎯' },
   { id: 'metas', label: 'Metas', ic: '⭐' },
+  { id: 'cofrinho', label: 'Cofrinho', ic: '🐷' },
 ]
 
 export default function App() {
@@ -30,6 +32,8 @@ export default function App() {
   const [incomes, setIncomes] = useState([])
   const [balances, setBalances] = useState([])
   const [fixedExpenses, setFixedExpenses] = useState([])
+  const [houseTaxes, setHouseTaxes] = useState([])
+  const [piggyYear, setPiggyYear] = useState([])
 
   useEffect(() => {
     if (!supabaseReady) { setLoading(false); return }
@@ -43,7 +47,7 @@ export default function App() {
 
   const loadAll = useCallback(async () => {
     if (!session) return
-    const [c, e, r, g, a, i, b, fx] = await Promise.all([
+    const [c, e, r, g, a, i, b, fx, ht, py] = await Promise.all([
       supabase.from('categories').select('*').order('name'),
       supabase.from('expenses').select('*').order('date', { ascending: false }),
       supabase.from('recurring').select('*').order('description'),
@@ -52,6 +56,8 @@ export default function App() {
       supabase.from('incomes').select('*').order('created_at', { ascending: false }),
       supabase.from('balances').select('*'),
       supabase.from('fixed_expenses').select('*').order('day_of_month'),
+      supabase.from('house_taxes').select('*').order('due_month'),
+      supabase.from('piggy_year').select('*'),
     ])
     setCategories(c.data || [])
     setExpenses(e.data || [])
@@ -61,6 +67,8 @@ export default function App() {
     setIncomes(i.data || [])
     setBalances(b.data || [])
     setFixedExpenses(fx.data || [])
+    setHouseTaxes(ht.data || [])
+    setPiggyYear(py.data || [])
   }, [session])
 
   useEffect(() => { loadAll() }, [loadAll])
@@ -88,7 +96,7 @@ export default function App() {
 
   const shared = {
     categories, expenses, monthExpenses, recurring, goals,
-    accounts, incomes, balances, fixedExpenses, month, reload: loadAll,
+    accounts, incomes, balances, fixedExpenses, houseTaxes, piggyYear, month, reload: loadAll,
   }
 
   return (
@@ -107,6 +115,7 @@ export default function App() {
         {tab === 'entradas' && <Income {...shared} />}
         {tab === 'orcamento' && <Budgets {...shared} />}
         {tab === 'metas' && <Goals {...shared} />}
+        {tab === 'cofrinho' && <PiggyBank {...shared} />}
       </div>
 
       <div className="tabbar">
