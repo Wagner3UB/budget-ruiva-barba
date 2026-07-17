@@ -189,3 +189,10 @@ input, select { font-family: inherit; }
   content: ''; position: absolute; left: 50%; top: 100%; transform: translateX(-50%);
   border: 6px solid transparent; border-top-color: #0f172a;
 }
+
+/* ---- Matriz com colunas de proporção fixa ---- */
+.matrix { table-layout: fixed; width: 100%; min-width: 880px; }
+.matrix th.name, .matrix td.name { width: 170px; white-space: normal; }
+.matrix th:last-child, .matrix td.tot { width: 96px; }
+/* as 12 colunas de mês dividem o restante igualmente (table-layout fixed) */
+.matrix td.cell, .matrix thead th:not(.name):not(:last-child) { overflow: hidden; text-overflow: ellipsis; }
