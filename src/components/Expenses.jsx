@@ -22,6 +22,11 @@ export default function Expenses({ categories, monthExpenses, accounts, fixedExp
   const [editingExpId, setEditingExpId] = useState(null)
   const [flash, setFlash] = useState('')
   const showFlash = (msg) => { setFlash(msg); setTimeout(() => setFlash(''), 3000) }
+  const [pop, setPop] = useState(null) // { text, x, y } - ancorado ao item, nao ao mouse
+  const showPop = (ev, text) => {
+    const r = ev.currentTarget.getBoundingClientRect()
+    setPop({ text, x: r.left + r.width / 2, y: r.top })
+  }
 
   const addExpense = async (e) => {
     e.preventDefault()
@@ -124,6 +129,7 @@ export default function Expenses({ categories, monthExpenses, accounts, fixedExp
   const [fPerson, setFPerson] = useState('')
   const [fAccount, setFAccount] = useState('')
   const [sortBy, setSortBy] = useState('data')
+  const [fCategory, setFCategory] = useState('')
   const addAccount = async (e) => {
     e.preventDefault()
     if (!newAcc.trim()) return
@@ -135,6 +141,7 @@ export default function Expenses({ categories, monthExpenses, accounts, fixedExp
   let variableExpenses = monthExpenses.filter((e) => !e.fixed_id && !e.piggy_deposit)
   if (fPerson) variableExpenses = variableExpenses.filter((e) => e.paid_by === fPerson)
   if (fAccount) variableExpenses = variableExpenses.filter((e) => (e.account || '') === fAccount)
+  if (fCategory) variableExpenses = variableExpenses.filter((e) => e.category_id === fCategory)
   variableExpenses = [...variableExpenses].sort((a, b) => {
     if (sortBy === 'valor_desc') return Number(b.amount) - Number(a.amount)
     if (sortBy === 'valor_asc') return Number(a.amount) - Number(b.amount)
@@ -148,6 +155,7 @@ export default function Expenses({ categories, monthExpenses, accounts, fixedExp
 
   return (
     <>
+      {pop && (<div className="note-pop" style={{ left: pop.x, top: pop.y }}>{pop.text}</div>)}
       {/* ---------- FIXOS DO MES ---------- */}
       <div className="card">
         <h2 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -295,6 +303,10 @@ export default function Expenses({ categories, monthExpenses, accounts, fixedExp
             <option value="">Banco: todos</option>
             {accounts.map((a) => <option key={a.id} value={a.name}>{a.name}</option>)}
           </select>
+          <select value={fCategory} onChange={(e) => setFCategory(e.target.value)}>
+            <option value="">Tipo: todos</option>
+            {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
           <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
             <option value="data">Data (recente)</option>
             <option value="valor_desc">Valor (maior)</option>
@@ -318,6 +330,9 @@ export default function Expenses({ categories, monthExpenses, accounts, fixedExp
                   <span className="dot" style={{ background: c?.color || PALETTE[(i + 12) % PALETTE.length] }} />
                   <div>
                     <div className="desc">{e.place || c?.name}
+                      {e.place && (
+                        <sup className="info-i" onMouseEnter={(ev) => showPop(ev, e.place)} onMouseLeave={() => setPop(null)}>ⓘ</sup>
+                      )}
                       <span className="tag" style={{ marginLeft: 6, ...badge.s }}>{badge.t}</span></div>
                     <div className="meta">{c?.name} · {fmtDate(e.date)} · {e.paid_by}{e.account ? ` · ${e.account}` : ''}</div>
                   </div>
