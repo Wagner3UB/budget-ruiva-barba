@@ -115,6 +115,7 @@ export default function PiggyBank({ piggy = 'casa', expenses, houseTaxes, taxPay
   const [depAmount, setDepAmount] = useState('')
   const [depNote, setDepNote] = useState('')
   const [depMsg, setDepMsg] = useState('')
+  const [depEditingId, setDepEditingId] = useState(null)
   const ensureDepositCategory = async () => {
     const found = categories.find((c) => c.name.toLowerCase() === cfg.category.toLowerCase())
     if (found) return found.id
@@ -125,16 +126,31 @@ export default function PiggyBank({ piggy = 'casa', expenses, houseTaxes, taxPay
     e.preventDefault()
     const amt = depAmount ? num(depAmount) : Number(monthlyReserve.toFixed(2))
     if (!amt) { setDepMsg('Informe um valor.'); return }
-    const catId = await ensureDepositCategory()
-    const { error } = await supabase.from('expenses').insert({
-      date: depDate, category_id: catId,
-      description: depNote || 'Depósito reservas',
-      place: depNote || 'Reservas',
-      amount: amt, paid_by: cfg.depositor, pay_status: 'Sim', piggy_deposit: true, piggy,
-    })
-    if (error) { setDepMsg('Erro ao salvar: ' + error.message); return }
-    setDepMsg(''); setDepAmount(''); setDepNote(''); reload()
+    if (depEditingId) {
+      const { error } = await supabase.from('expenses').update({
+        date: depDate, amount: amt,
+        description: depNote || 'Depósito reservas', place: depNote || 'Reservas',
+      }).eq('id', depEditingId)
+      if (error) { setDepMsg('Erro ao salvar: ' + error.message); return }
+    } else {
+      const catId = await ensureDepositCategory()
+      const { error } = await supabase.from('expenses').insert({
+        date: depDate, category_id: catId,
+        description: depNote || 'Depósito reservas',
+        place: depNote || 'Reservas',
+        amount: amt, paid_by: cfg.depositor, pay_status: 'Sim', piggy_deposit: true, piggy,
+      })
+      if (error) { setDepMsg('Erro ao salvar: ' + error.message); return }
+    }
+    setDepMsg(''); setDepAmount(''); setDepNote(''); setDepEditingId(null); reload()
   }
+  const editDeposit = (d) => {
+    setDepDate(d.date); setDepAmount(String(d.amount))
+    setDepNote(d.place && d.place !== 'Reservas' ? d.place : '')
+    setDepEditingId(d.id)
+    document.getElementById('dep-form')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }
+  const cancelDep = () => { setDepAmount(''); setDepNote(''); setDepEditingId(null); setDepMsg('') }
   const delDeposit = async (id) => { await supabase.from('expenses').delete().eq('id', id); reload() }
 
   return (
@@ -307,11 +323,11 @@ export default function PiggyBank({ piggy = 'casa', expenses, houseTaxes, taxPay
 
       {/* ---------- DEPÓSITO ---------- */}
       <div className="card">
-        <h2>Registrar depósito nas reservas</h2>
+        <h2>{depEditingId ? 'Editar depósito' : 'Registrar depósito nas reservas'}</h2>
         <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: -4 }}>
           Dinheiro que sai da conta do {cfg.depositor} pra reserva (abate do Disponível dele/dela).
         </p>
-        <form onSubmit={registerDeposit}>
+        <form id="dep-form" onSubmit={registerDeposit}>
           <div className="row">
             <div className="field"><label>Data</label>
               <input type="date" value={depDate} onChange={(e) => setDepDate(e.target.value)} required /></div>
@@ -321,7 +337,10 @@ export default function PiggyBank({ piggy = 'casa', expenses, houseTaxes, taxPay
           <div className="field"><label>Descrição (opcional)</label>
             <input value={depNote} onChange={(e) => setDepNote(e.target.value)} placeholder="ex: reserva de julho" /></div>
           {depMsg && <div className="msg err">{depMsg}</div>}
-          <button className="btn">Registrar depósito</button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className="btn" style={{ flex: 1 }}>{depEditingId ? 'Salvar alteração' : 'Registrar depósito'}</button>
+            {depEditingId && <button type="button" className="btn btn-ghost" style={{ flex: 0, padding: '13px 16px' }} onClick={cancelDep}>Cancelar</button>}
+          </div>
         </form>
         {deposits.length > 0 && (
           <div style={{ marginTop: 12 }}>
@@ -333,6 +352,7 @@ export default function PiggyBank({ piggy = 'casa', expenses, houseTaxes, taxPay
                 </div>
                 <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                   <span className="amt" style={{ color: 'var(--teal)' }}>+{money(d.amount)}</span>
+                  <button className="btn btn-sm btn-ghost" title="editar" onClick={() => editDeposit(d)}>✏️</button>
                   <button className="x" onClick={() => delDeposit(d.id)}>✕</button>
                 </span>
               </div>
