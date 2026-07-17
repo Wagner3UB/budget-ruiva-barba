@@ -203,3 +203,10 @@ input, select { font-family: inherit; }
   flex: 1; min-width: 120px; padding: 8px 10px; font-size: 13px;
   border: 1px solid var(--border); border-radius: 10px; background: #fff; color: var(--text);
 }
+
+/* ---- Botões só-ícone: transparentes, sem borda, com área de clique ---- */
+.icon-btn {
+  background: none; border: none; padding: 6px 8px; cursor: pointer;
+  font-size: 16px; line-height: 1; color: var(--muted); border-radius: 8px;
+}
+.icon-btn:hover { opacity: .6; }

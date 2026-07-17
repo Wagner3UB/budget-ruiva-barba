@@ -321,7 +321,7 @@ export default function Expenses({ categories, monthExpenses, accounts, fixedExp
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <span className="amt" style={st === 'Não contabilizado' ? { textDecoration: 'line-through', color: 'var(--muted)' } : null}>{money(e.amount)}</span>
-                  <button className="btn btn-sm btn-ghost" title="editar" onClick={() => editExpense(e)}>✏️</button>
+                  <button className="icon-btn" title="editar" onClick={() => editExpense(e)}>✏️</button>
                   <button className="x" onClick={() => removeExpense(e.id)}>✕</button>
                 </div>
               </div>

@@ -291,13 +291,13 @@ export default function PiggyBank({ piggy = 'casa', expenses, houseTaxes, taxPay
                       <span className="desc">{MESES[p.month - 1]} — {money(p.amount)}</span>
                       <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                         {p.paid && (
-                          <button className="btn btn-sm btn-ghost"
-                            style={{ color: p.transferred ? 'var(--green)' : '#3b82f6', fontWeight: 600 }}
+                          <button className="icon-btn"
+                            style={{ color: p.transferred ? 'var(--green)' : '#3b82f6', fontWeight: 600, fontSize: 13 }}
                             onClick={() => toggleTransferred(p)}>{p.transferred ? 'transferido' : 'transferir'}</button>
                         )}
-                        <button className="btn btn-sm btn-ghost" title="editar" onClick={() => editPayment(p)}>✏️</button>
-                        <button className="btn btn-sm btn-ghost" title={p.paid ? 'pago — clique p/ desmarcar' : 'a pagar — clique p/ marcar'}
-                          style={{ color: p.paid ? 'var(--green)' : 'var(--danger)', fontWeight: 800, fontSize: 18, padding: '4px 12px' }}
+                        <button className="icon-btn" title="editar" onClick={() => editPayment(p)}>✏️</button>
+                        <button className="icon-btn" title={p.paid ? 'pago — clique p/ desmarcar' : 'a pagar — clique p/ marcar'}
+                          style={{ color: p.paid ? 'var(--green)' : 'var(--danger)', fontWeight: 800, fontSize: 18 }}
                           onClick={() => togglePaid(p)}>€</button>
                         <button className="x" onClick={() => delPayment(p)}>✕</button>
                       </span>
@@ -363,7 +363,7 @@ export default function PiggyBank({ piggy = 'casa', expenses, houseTaxes, taxPay
                 </div>
                 <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                   <span className="amt" style={{ color: 'var(--teal)' }}>+{money(d.amount)}</span>
-                  <button className="btn btn-sm btn-ghost" title="editar" onClick={() => editDeposit(d)}>✏️</button>
+                  <button className="icon-btn" title="editar" onClick={() => editDeposit(d)}>✏️</button>
                   <button className="x" onClick={() => delDeposit(d.id)}>✕</button>
                 </span>
               </div>
