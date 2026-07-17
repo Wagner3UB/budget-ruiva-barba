@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis } from 'recharts'
 import { money, monthLabel, PALETTE, counted } from '../lib/helpers'
+import KpiSummary from './KpiSummary'
 
 function shiftMonth(key, delta) {
   const [y, m] = key.split('-').map(Number)
@@ -8,7 +9,8 @@ function shiftMonth(key, delta) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
 }
 
-export default function Dashboard({ categories, expenses, monthExpenses, month, setMonth }) {
+export default function Dashboard(props) {
+  const { categories, expenses, monthExpenses, month, setMonth } = props
   const catById = useMemo(
     () => Object.fromEntries(categories.map((c) => [c.id, c])), [categories])
 
@@ -46,6 +48,8 @@ export default function Dashboard({ categories, expenses, monthExpenses, month, 
         <span className="label">{monthLabel(month)}</span>
         <button onClick={() => setMonth(shiftMonth(month, 1))}>›</button>
       </div>
+
+      <KpiSummary {...props} />
 
       <div className="summary" style={{ marginBottom: 16 }}>
         <div className="box">

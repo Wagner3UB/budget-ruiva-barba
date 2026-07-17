@@ -4,13 +4,19 @@ import { money, todayISO } from '../lib/helpers'
 
 const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
 
-export default function PiggyBank({ expenses, houseTaxes, taxPayments, piggyYear, categories, reload }) {
+const CFG = {
+  casa:  { depositor: 'Gui',   category: 'Fixos Gui',   label: 'Casa'  },
+  nathi: { depositor: 'Nathi', category: 'Taxas Nathi', label: 'Nathi' },
+}
+
+export default function PiggyBank({ piggy = 'casa', expenses, houseTaxes, taxPayments, piggyYear, categories, reload }) {
+  const cfg = CFG[piggy] || CFG.casa
   const [year, setYear] = useState(new Date().getFullYear())
   const num = (v) => Number(String(v).replace(',', '.')) || 0
 
   const items = useMemo(
-    () => houseTaxes.filter((t) => t.year === year).sort((a, b) => a.name.localeCompare(b.name)),
-    [houseTaxes, year])
+    () => houseTaxes.filter((t) => t.year === year && (t.piggy || 'casa') === piggy).sort((a, b) => a.name.localeCompare(b.name)),
+    [houseTaxes, year, piggy])
   const itemIds = new Set(items.map((i) => i.id))
   const payments = useMemo(
     () => taxPayments.filter((p) => itemIds.has(p.tax_id)),
@@ -28,10 +34,10 @@ export default function PiggyBank({ expenses, houseTaxes, taxPayments, piggyYear
   const anualTotal = payments.reduce((s, p) => s + Number(p.amount), 0)
   const monthlyReserve = anualTotal / 12
 
-  const opening = Number(piggyYear.find((y) => y.year === year)?.opening || 0)
+  const opening = Number(piggyYear.find((y) => y.year === year && (y.piggy || 'casa') === piggy)?.opening || 0)
   const deposits = useMemo(
-    () => expenses.filter((e) => e.piggy_deposit && Number((e.date || '').slice(0, 4)) === year),
-    [expenses, year])
+    () => expenses.filter((e) => e.piggy_deposit && (e.piggy || 'casa') === piggy && Number((e.date || '').slice(0, 4)) === year),
+    [expenses, year, piggy])
   const depositsTotal = deposits.reduce((s, e) => s + Number(e.amount), 0)
   const paidTotal = payments.filter((p) => p.paid).reduce((s, p) => s + Number(p.amount), 0)
   const balance = opening + depositsTotal - paidTotal
@@ -44,7 +50,7 @@ export default function PiggyBank({ expenses, houseTaxes, taxPayments, piggyYear
   const [editOpen, setEditOpen] = useState(false)
   const [openVal, setOpenVal] = useState('')
   const saveOpening = async () => {
-    await supabase.from('piggy_year').upsert({ year, opening: num(openVal) })
+    await supabase.from('piggy_year').upsert({ piggy, year, opening: num(openVal) }, { onConflict: 'piggy,year' })
     setEditOpen(false); setOpenVal(''); reload()
   }
 
@@ -69,7 +75,7 @@ export default function PiggyBank({ expenses, houseTaxes, taxPayments, piggyYear
     let item = items.find((i) => i.name.toLowerCase() === vName.trim().toLowerCase())
     let taxId = item?.id
     if (!taxId) {
-      const { data } = await supabase.from('house_taxes').insert({ year, name: vName.trim() }).select().single()
+      const { data } = await supabase.from('house_taxes').insert({ year, name: vName.trim(), piggy }).select().single()
       taxId = data?.id
     }
     if (taxId) await supabase.from('tax_payments').insert({ tax_id: taxId, month: Number(vMonth), amount: num(vAmount) })
@@ -81,20 +87,20 @@ export default function PiggyBank({ expenses, houseTaxes, taxPayments, piggyYear
   // ---------- deposito ----------
   const [depDate, setDepDate] = useState(todayISO())
   const [depAmount, setDepAmount] = useState('')
-  const ensureFixosCategory = async () => {
-    const found = categories.find((c) => c.name.toLowerCase() === 'fixos gui')
+  const ensureDepositCategory = async () => {
+    const found = categories.find((c) => c.name.toLowerCase() === cfg.category.toLowerCase())
     if (found) return found.id
-    const { data } = await supabase.from('categories').insert({ name: 'Fixos Gui', ideal: 0, color: '#0f766e' }).select().single()
+    const { data } = await supabase.from('categories').insert({ name: cfg.category, ideal: 0, color: '#0f766e' }).select().single()
     return data?.id || null
   }
   const registerDeposit = async (e) => {
     e.preventDefault()
     const amt = depAmount ? num(depAmount) : Number(monthlyReserve.toFixed(2))
     if (!amt) return
-    const catId = await ensureFixosCategory()
+    const catId = await ensureDepositCategory()
     await supabase.from('expenses').insert({
       date: depDate, category_id: catId, description: 'Depósito cofrinho',
-      place: 'Cofrinho', amount: amt, paid_by: 'Gui', pay_status: 'Sim', piggy_deposit: true,
+      place: 'Cofrinho', amount: amt, paid_by: cfg.depositor, pay_status: 'Sim', piggy_deposit: true, piggy,
     })
     setDepAmount(''); reload()
   }
@@ -250,7 +256,7 @@ export default function PiggyBank({ expenses, houseTaxes, taxPayments, piggyYear
       <div className="card">
         <h2>Registrar depósito no cofrinho</h2>
         <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: -4 }}>
-          O "Fixos Gui": dinheiro que sai da conta do Gui pra reserva (abate do Disponível dele).
+          Dinheiro que sai da conta do {cfg.depositor} pra reserva (abate do Disponível dele/dela).
         </p>
         <form onSubmit={registerDeposit}>
           <div className="row">

@@ -15,7 +15,8 @@ const TABS = [
   { id: 'entradas', label: 'Entradas', ic: '💰' },
   { id: 'orcamento', label: 'Orçam.', ic: '🎯' },
   { id: 'metas', label: 'Metas', ic: '⭐' },
-  { id: 'cofrinho', label: 'Cofrinho', ic: '🐷' },
+  { id: 'cofrinho', label: 'Casa', ic: '🏠' },
+  { id: 'nathi', label: 'Nathi', ic: '👩' },
 ]
 
 export default function App() {
@@ -118,7 +119,8 @@ export default function App() {
         {tab === 'entradas' && <Income {...shared} />}
         {tab === 'orcamento' && <Budgets {...shared} />}
         {tab === 'metas' && <Goals {...shared} />}
-        {tab === 'cofrinho' && <PiggyBank {...shared} />}
+        {tab === 'cofrinho' && <PiggyBank piggy="casa" {...shared} />}
+        {tab === 'nathi' && <PiggyBank piggy="nathi" {...shared} />}
       </div>
 
       <div className="tabbar">

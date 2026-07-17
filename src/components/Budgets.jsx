@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react'
 import { supabase } from '../supabaseClient'
 import { money, counted } from '../lib/helpers'
+import KpiSummary from './KpiSummary'
 
-export default function Budgets({ categories, monthExpenses, reload }) {
+export default function Budgets(props) {
+  const { categories, monthExpenses, reload } = props
   const [editing, setEditing] = useState(null)
   const [val, setVal] = useState('')
 
@@ -29,6 +31,7 @@ export default function Budgets({ categories, monthExpenses, reload }) {
 
   return (
     <>
+      <KpiSummary {...props} />
       <div className="summary" style={{ marginBottom: 16 }}>
         <div className="box">
           <div className="label">Gasto / Ideal</div>

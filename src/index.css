@@ -173,3 +173,5 @@ input, select { font-family: inherit; }
 @media (min-width: 1600px) {
   .content { column-width: 420px; }
 }
+
+.kpi4 { grid-template-columns: 1fr 1fr; }

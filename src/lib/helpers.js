@@ -37,3 +37,28 @@ export const daysInMonth = (key) => {
 // Um modelo fixo esta ativo no mes?
 export const fixedActiveIn = (f, month) =>
   f.active && f.start_month <= month && (!f.end_month || month <= f.end_month)
+
+// Disponível de uma pessoa = saldo inicial + entradas − saídas (até o mês, cumulativo)
+export function disponivelOf(person, { incomes = [], expenses = [], balances = [] }, month) {
+  const opening = Number(balances.find((b) => b.person === person)?.opening || 0)
+  const inc = incomes
+    .filter((i) => i.person === person && (!month || i.month <= month))
+    .reduce((s, i) => s + Number(i.amount), 0)
+  const out = expenses
+    .filter((e) => e.paid_by === person && counted(e) && (!month || (e.date || '').slice(0, 7) <= month))
+    .reduce((s, e) => s + Number(e.amount), 0)
+  return opening + inc - out
+}
+
+// Saldo de um cofrinho ('casa' | 'nathi') no ano = inicial + depósitos − taxas pagas
+export function cofrinhoBalance(piggy, { piggyYear = [], houseTaxes = [], taxPayments = [], expenses = [] }, year) {
+  const opening = Number(piggyYear.find((y) => y.year === year && (y.piggy || 'casa') === piggy)?.opening || 0)
+  const deposits = expenses
+    .filter((e) => e.piggy_deposit && (e.piggy || 'casa') === piggy && Number((e.date || '').slice(0, 4)) === year)
+    .reduce((s, e) => s + Number(e.amount), 0)
+  const itemIds = new Set(houseTaxes.filter((t) => t.year === year && (t.piggy || 'casa') === piggy).map((t) => t.id))
+  const paid = taxPayments
+    .filter((p) => itemIds.has(p.tax_id) && p.paid)
+    .reduce((s, p) => s + Number(p.amount), 0)
+  return opening + deposits - paid
+}
