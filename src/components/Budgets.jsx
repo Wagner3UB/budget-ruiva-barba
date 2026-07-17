@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { supabase } from '../supabaseClient'
-import { money, counted } from '../lib/helpers'
+import { money, counted, parseAmount } from '../lib/helpers'
 import KpiSummary from './KpiSummary'
 
 export default function Budgets(props) {
@@ -24,7 +24,7 @@ export default function Budgets(props) {
   const over = rows.filter((c) => c.ideal > 0 && c.spent > c.ideal)
 
   const save = async (id) => {
-    await supabase.from('categories').update({ ideal: Number(String(val).replace(',', '.')) || 0 }).eq('id', id)
+    await supabase.from('categories').update({ ideal: parseAmount(val) || 0 }).eq('id', id)
     setEditing(null); setVal('')
     reload()
   }
