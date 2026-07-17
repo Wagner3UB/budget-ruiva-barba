@@ -72,3 +72,10 @@ export function parseAmount(v) {
   const n = Number(s)
   return Number.isFinite(n) ? n : NaN
 }
+
+// 'YYYY-MM-DD' -> 'DD/MM/AAAA'
+export const fmtDate = (iso) => {
+  if (!iso) return ''
+  const [y, m, d] = String(iso).slice(0, 10).split('-')
+  return d && m && y ? `${d}/${m}/${y}` : iso
+}

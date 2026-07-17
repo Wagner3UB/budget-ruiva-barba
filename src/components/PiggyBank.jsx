@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { supabase } from '../supabaseClient'
-import { money, todayISO, parseAmount } from '../lib/helpers'
+import { money, todayISO, parseAmount, fmtDate } from '../lib/helpers'
 
 const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
 
@@ -359,7 +359,7 @@ export default function PiggyBank({ piggy = 'casa', expenses, houseTaxes, taxPay
               <div className="item" key={d.id}>
                 <div>
                   <div className="desc">{d.place || d.description || 'Depósito'}</div>
-                  <div className="meta">{d.date}</div>
+                  <div className="meta">{fmtDate(d.date)}</div>
                 </div>
                 <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                   <span className="amt" style={{ color: 'var(--teal)' }}>+{money(d.amount)}</span>

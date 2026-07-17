@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { supabase } from '../supabaseClient'
-import { money, todayISO, counted, parseAmount } from '../lib/helpers'
+import { money, todayISO, counted, parseAmount, fmtDate } from '../lib/helpers'
 
 const PEOPLE = ['Gui', 'Nathi']
 
@@ -140,7 +140,7 @@ export default function Income({ incomes, expenses, month, balances, reload }) {
               <div className="info">
                 <div>
                   <div className="desc">{i.description}</div>
-                  <div className="meta">{i.person}{i.date ? ` · ${i.date}` : ''}</div>
+                  <div className="meta">{i.person}{i.date ? ` · ${fmtDate(i.date)}` : ''}</div>
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>

@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
 import { supabase } from '../supabaseClient'
-import { money, todayISO, monthKey, daysInMonth, fixedActiveIn, PALETTE, parseAmount } from '../lib/helpers'
+import { money, todayISO, monthKey, daysInMonth, fixedActiveIn, PALETTE, parseAmount, fmtDate } from '../lib/helpers'
 
 const PAY = ['Não', 'Sim', 'Não contabilizado']
 const WHO = ['Gui', 'Nathi', 'Casal']
@@ -300,7 +300,7 @@ export default function Expenses({ categories, monthExpenses, accounts, fixedExp
                   <div>
                     <div className="desc">{e.place || c?.name}
                       <span className="tag" style={{ marginLeft: 6, ...badge.s }}>{badge.t}</span></div>
-                    <div className="meta">{c?.name} · {e.date} · {e.paid_by}{e.account ? ` · ${e.account}` : ''}</div>
+                    <div className="meta">{c?.name} · {fmtDate(e.date)} · {e.paid_by}{e.account ? ` · ${e.account}` : ''}</div>
                   </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
