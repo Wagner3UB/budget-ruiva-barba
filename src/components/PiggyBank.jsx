@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { supabase } from '../supabaseClient'
+import { IconEdit, IconTrash, IconInfo } from './icons'
 import { money, todayISO, parseAmount, fmtDate } from '../lib/helpers'
 
 const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
@@ -231,7 +232,7 @@ export default function PiggyBank({ piggy = 'casa', expenses, houseTaxes, taxPay
                           onMouseEnter={p.note ? (ev) => showPop(ev, p.note) : undefined}
                           onMouseLeave={p.note ? () => setPop(null) : undefined}>
                           {money(p.amount).replace(/\s?€/, '')}
-                          {p.note && <sup className="info-i">ⓘ</sup>}
+                          {p.note && <span className="info-i"><IconInfo size={11} /></span>}
                         </td>
                       )
                     })}
@@ -295,11 +296,11 @@ export default function PiggyBank({ piggy = 'casa', expenses, houseTaxes, taxPay
                             style={{ color: p.transferred ? 'var(--green)' : '#3b82f6', fontWeight: 600, fontSize: 13 }}
                             onClick={() => toggleTransferred(p)}>{p.transferred ? 'transferido' : 'transferir'}</button>
                         )}
-                        <button className="icon-btn" title="editar" onClick={() => editPayment(p)}>✏️</button>
+                        <button className="icon-btn" title="editar" onClick={() => editPayment(p)}><IconEdit /></button>
                         <button className="icon-btn" title={p.paid ? 'pago — clique p/ desmarcar' : 'a pagar — clique p/ marcar'}
                           style={{ color: p.paid ? 'var(--green)' : 'var(--danger)', fontWeight: 800, fontSize: 18 }}
                           onClick={() => togglePaid(p)}>€</button>
-                        <button className="x" onClick={() => delPayment(p)}>✕</button>
+                        <button className="x" title="excluir" onClick={() => delPayment(p)}><IconTrash /></button>
                       </span>
                     </div>
                   ))}
@@ -363,8 +364,8 @@ export default function PiggyBank({ piggy = 'casa', expenses, houseTaxes, taxPay
                 </div>
                 <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                   <span className="amt" style={{ color: 'var(--teal)' }}>+{money(d.amount)}</span>
-                  <button className="icon-btn" title="editar" onClick={() => editDeposit(d)}>✏️</button>
-                  <button className="x" onClick={() => delDeposit(d.id)}>✕</button>
+                  <button className="icon-btn" title="editar" onClick={() => editDeposit(d)}><IconEdit /></button>
+                  <button className="x" title="excluir" onClick={() => delDeposit(d.id)}><IconTrash /></button>
                 </span>
               </div>
             ))}

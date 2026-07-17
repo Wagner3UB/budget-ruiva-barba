@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
 import { supabase } from '../supabaseClient'
+import { IconEdit, IconTrash, IconGear, IconInfo } from './icons'
 import { money, todayISO, monthKey, daysInMonth, fixedActiveIn, PALETTE, parseAmount, fmtDate } from '../lib/helpers'
 
 const PAY = ['Não', 'Sim', 'Não contabilizado']
@@ -160,7 +161,7 @@ export default function Expenses({ categories, monthExpenses, accounts, fixedExp
       <div className="card">
         <h2 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           Fixos do mês
-          <button className="icon-btn" title={manageFixed ? 'fechar' : 'gerir'} onClick={() => setManageFixed((v) => !v)}>⚙️</button>
+          <button className="icon-btn" title={manageFixed ? 'fechar' : 'gerir'} onClick={() => setManageFixed((v) => !v)}><IconGear /></button>
         </h2>
         {(manageFixed ? fixedExpenses.length : monthFixed.length) === 0 ? (
           <div className="empty">Nenhum gasto fixo. Toque na engrenagem para cadastrar.</div>
@@ -208,7 +209,7 @@ export default function Expenses({ categories, monthExpenses, accounts, fixedExp
                       <input type="month" defaultValue={f.end_month || ''} style={{ padding: '3px 6px', border: '1px solid var(--border)', borderRadius: 6 }}
                         onChange={(e) => setFixedEnd(f, e.target.value)} />
                       <button className="btn btn-sm btn-ghost" onClick={() => toggleFixedActive(f)}>{f.active ? 'desativar' : 'reativar'}</button>
-                      <button className="icon-btn" title="excluir" style={{ marginLeft: 'auto' }} onClick={() => delFixed(f.id)}>✕</button>
+                      <button className="icon-btn" title="excluir" style={{ marginLeft: 'auto' }} onClick={() => delFixed(f.id)}><IconTrash /></button>
                     </div>
                   )}
                 </div>
@@ -325,7 +326,7 @@ export default function Expenses({ categories, monthExpenses, accounts, fixedExp
                   <div>
                     <div className="desc">{e.place || c?.name}
                       {e.place && (
-                        <sup className="info-i" onMouseEnter={(ev) => showPop(ev, e.place)} onMouseLeave={() => setPop(null)}>ⓘ</sup>
+                        <span className="info-i" onMouseEnter={(ev) => showPop(ev, e.place)} onMouseLeave={() => setPop(null)}><IconInfo size={12} /></span>
                       )}
                       <span className="tag" style={{ marginLeft: 6, ...badge.s }}>{badge.t}</span></div>
                     <div className="meta">{c?.name} · {fmtDate(e.date)} · {e.paid_by}{e.account ? ` · ${e.account}` : ''}</div>
@@ -333,8 +334,8 @@ export default function Expenses({ categories, monthExpenses, accounts, fixedExp
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <span className="amt" style={st === 'Não contabilizado' ? { textDecoration: 'line-through', color: 'var(--muted)' } : null}>{money(e.amount)}</span>
-                  <button className="icon-btn" title="editar" onClick={() => editExpense(e)}>✏️</button>
-                  <button className="x" onClick={() => removeExpense(e.id)}>✕</button>
+                  <button className="icon-btn" title="editar" onClick={() => editExpense(e)}><IconEdit /></button>
+                  <button className="x" title="excluir" onClick={() => removeExpense(e.id)}><IconTrash /></button>
                 </div>
               </div>
             )
@@ -346,14 +347,14 @@ export default function Expenses({ categories, monthExpenses, accounts, fixedExp
       <div className="card">
         <h2 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           Contas / Bancos
-          <button className="btn btn-sm btn-ghost" onClick={() => setManageAcc((m) => !m)}>{manageAcc ? 'fechar' : 'gerir'}</button>
+          <button className="icon-btn" title={manageAcc ? 'fechar' : 'gerir'} onClick={() => setManageAcc((m) => !m)}><IconGear /></button>
         </h2>
         {manageAcc && (
           <>
             {accounts.map((a) => (
               <div className="item" key={a.id}>
                 <span className="desc">{a.name}</span>
-                <button className="x" onClick={() => delAccount(a.id)}>✕</button>
+                <button className="x" title="excluir" onClick={() => delAccount(a.id)}><IconTrash /></button>
               </div>
             ))}
             <form onSubmit={addAccount} style={{ marginTop: 10, display: 'flex', gap: 8 }}>
