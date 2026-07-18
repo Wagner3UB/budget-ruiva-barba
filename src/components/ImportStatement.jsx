@@ -253,17 +253,6 @@ export default function ImportStatement({ categories, accounts, expenses, income
           Aceita extratos do <b>BBVA</b> (.xlsx) e do <b>ING</b> (.csv). O app identifica tipo, categoria,
           data e valor. Revise e confirme. Movimentos já lançados aparecem como duplicados.
         </p>
-        <div className="row">
-          <div className="field"><label>Conta / Banco</label>
-            <select value={account} onChange={(e) => setAccount(e.target.value)}>
-              <option value="">Selecione…</option>
-              {accounts.map((a) => <option key={a.id} value={a.name}>{a.name}</option>)}
-            </select></div>
-          <div className="field"><label>Pessoa</label>
-            <select value={person} onChange={(e) => setPerson(e.target.value)}>
-              {WHO.map((w) => <option key={w}>{w}</option>)}
-            </select></div>
-        </div>
         <div className="field">
           <label>Arquivo do extrato</label>
           <input type="file" accept=".xlsx,.xls,.csv" onChange={onFile} />
@@ -281,6 +270,17 @@ export default function ImportStatement({ categories, accounts, expenses, income
           <p style={{ fontSize: 12, color: 'var(--muted)', margin: '2px 0 8px' }}>
             Ajuste o que precisar. Nada é gravado até você confirmar.
           </p>
+          <div className="row">
+            <div className="field"><label>Conta / Banco</label>
+              <select value={account} onChange={(e) => setAccount(e.target.value)}>
+                <option value="">Selecione…</option>
+                {accounts.map((a) => <option key={a.id} value={a.name}>{a.name}</option>)}
+              </select></div>
+            <div className="field"><label>Pessoa</label>
+              <select value={person} onChange={(e) => setPerson(e.target.value)}>
+                {WHO.map((w) => <option key={w}>{w}</option>)}
+              </select></div>
+          </div>
           {rows.some((r) => r.dup) && (
             <button className="btn btn-ghost btn-sm" style={{ marginBottom: 10, alignSelf: 'flex-start' }}
               onClick={() => setRows((rs) => rs.filter((r) => !r.dup))}>
