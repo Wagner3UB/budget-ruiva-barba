@@ -118,6 +118,9 @@ export default function Expenses({ categories, monthExpenses, accounts, fixedExp
   const toggleFixedActive = async (f) => {
     await supabase.from('fixed_expenses').update({ active: !f.active }).eq('id', f.id); reload()
   }
+  const toggleFixedReserve = async (f) => {
+    await supabase.from('fixed_expenses').update({ to_reserve: !f.to_reserve }).eq('id', f.id); reload()
+  }
   const setFixedEnd = async (f, val) => {
     await supabase.from('fixed_expenses').update({ end_month: val || null }).eq('id', f.id); reload()
   }
@@ -209,6 +212,8 @@ export default function Expenses({ categories, monthExpenses, accounts, fixedExp
                       <span>fim:</span>
                       <input type="month" defaultValue={f.end_month || ''} style={{ padding: '3px 6px', border: '1px solid var(--border)', borderRadius: 6 }}
                         onChange={(e) => setFixedEnd(f, e.target.value)} />
+                      <button className="btn btn-sm btn-ghost" style={f.to_reserve ? { color: '#0f766e', fontWeight: 600 } : {}}
+                        onClick={() => toggleFixedReserve(f)}>{f.to_reserve ? '→ reservas ✓' : '→ reservas'}</button>
                       <button className="btn btn-sm btn-ghost" onClick={() => toggleFixedActive(f)}>{f.active ? 'desativar' : 'reativar'}</button>
                       <button className="icon-btn" title="excluir" style={{ marginLeft: 'auto' }} onClick={() => delFixed(f.id)}><IconTrash /></button>
                     </div>
