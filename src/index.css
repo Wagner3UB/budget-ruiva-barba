@@ -328,7 +328,7 @@ input, select { font-family: inherit; }
 .modal-actions .btn { width: 200px; flex: 0 0 auto; }
 
 /* ============ Modal de importação: duas colunas ============ */
-.modal.import-modal { max-height: 95vh; display: flex; flex-direction: column; overflow: hidden; }
+.modal.import-modal { max-width: 80vw; width: 80vw; max-height: 95vh; display: flex; flex-direction: column; overflow: hidden; }
 .import-cols { display: flex; gap: 12px; flex: 1; min-height: 0; }
 .import-col { flex: 1; display: flex; flex-direction: column; min-height: 0; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
 .import-col h3 { margin: 0; padding: 9px 12px; background: #f8fafc; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; border-bottom: 1px solid var(--border); }
