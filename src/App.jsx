@@ -7,7 +7,7 @@ import Income from './components/Income'
 import Budgets from './components/Budgets'
 import PiggyBank from './components/PiggyBank'
 import { monthKey } from './lib/helpers'
-import { IconClose, IconChevronLeft } from './components/icons'
+import { IconMenu, IconClose } from './components/icons'
 
 const TABS = [
   { id: 'resumo', label: 'Resumo', ic: '📊' },
@@ -110,8 +110,22 @@ export default function App() {
           <h1>💶 Gastos do Casal</h1>
           <div className="sub">{session.user.email}</div>
         </div>
-        <button onClick={() => supabase.auth.signOut()}>Sair</button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button className="nav-burger" title="menu" onClick={() => setMenuOpen((o) => !o)}>
+            {menuOpen ? <IconClose /> : <IconMenu />}
+          </button>
+          <button onClick={() => supabase.auth.signOut()}>Sair</button>
+        </div>
       </div>
+
+      <nav className={`topnav ${menuOpen ? 'open' : ''}`}>
+        {TABS.map((t) => (
+          <button key={t.id} className={tab === t.id ? 'active' : ''}
+            onClick={() => { setTab(t.id); setMenuOpen(false) }}>
+            <span className="ic">{t.ic}</span><span>{t.label}</span>
+          </button>
+        ))}
+      </nav>
 
       <div className="content">
         {tab === 'resumo' && <Dashboard {...shared} setMonth={setMonth} />}
@@ -120,21 +134,6 @@ export default function App() {
         {tab === 'orcamento' && <Budgets {...shared} />}
         {tab === 'cofrinho' && <PiggyBank piggy="casa" {...shared} />}
         {tab === 'nathi' && <PiggyBank piggy="nathi" {...shared} />}
-      </div>
-
-      <div className={`drawer ${menuOpen ? 'open' : ''}`}>
-        <button className="drawer-handle" title="menu" onClick={() => setMenuOpen((o) => !o)}>
-          <IconChevronLeft />
-        </button>
-        <div className="drawer-panel">
-          <button className="drawer-close" title="fechar" onClick={() => setMenuOpen(false)}><IconClose size={18} /></button>
-          {TABS.map((t) => (
-            <button key={t.id} className={`side-item ${tab === t.id ? 'active' : ''}`}
-              onClick={() => { setTab(t.id); setMenuOpen(false) }}>
-              <span className="ic">{t.ic}</span><span>{t.label}</span>
-            </button>
-          ))}
-        </div>
       </div>
     </div>
   )

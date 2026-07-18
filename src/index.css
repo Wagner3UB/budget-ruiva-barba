@@ -266,3 +266,30 @@ input, select { font-family: inherit; }
   color: var(--muted); cursor: pointer; padding: 4px; border-radius: 8px; line-height: 0;
 }
 .drawer-close:hover { background: #f1f5f9; }
+
+/* ============ Menu no header (nav) ============ */
+.nav-burger {
+  display: none; background: rgba(255,255,255,0.16); border: none; color: #fff;
+  width: 40px; height: 40px; border-radius: 8px; align-items: center; justify-content: center; cursor: pointer;
+}
+.topnav {
+  display: flex; gap: 2px; padding: 6px 10px; background: #fff; border-bottom: 1px solid var(--border);
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+}
+.topnav button {
+  background: none; border: none; padding: 8px 12px; border-radius: 8px; font-size: 14px;
+  color: var(--muted); display: flex; align-items: center; gap: 6px; white-space: nowrap; cursor: pointer;
+}
+.topnav button .ic { font-size: 16px; line-height: 1; }
+.topnav button:hover { background: #f1f5f9; }
+.topnav button.active { color: var(--teal); background: #f0fdfa; font-weight: 600; }
+
+@media (max-width: 760px) {
+  .nav-burger { display: flex; }
+  .topnav { display: none; flex-direction: column; gap: 2px; }
+  .topnav.open { display: flex; }
+  .topnav button { justify-content: flex-start; padding: 12px 14px; font-size: 15px; }
+}
+
+/* desativa a gaveta antiga (não usada mais) */
+.drawer, .side-nav { display: none !important; }
