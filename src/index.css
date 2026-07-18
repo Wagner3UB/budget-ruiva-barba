@@ -388,3 +388,8 @@ html, body { overflow-x: hidden; }
 @media (min-width: 1024px) {
   .appheader .topbar, .appheader .topnav { padding-left: 28px; padding-right: 28px; }
 }
+
+/* ============ Recuo lateral unificado: 2.5vw (header + conteúdo) ============ */
+.content,
+.appheader .topbar,
+.appheader .topnav { padding-left: 2.5vw !important; padding-right: 2.5vw !important; }
