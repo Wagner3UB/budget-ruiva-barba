@@ -102,6 +102,7 @@ export default function ImportStatement({ categories, accounts, expenses, income
     const col = (name) => head.findIndex((h) => h.includes(name))
     const isING = head.some((h) => h.includes('uscite'))
     const parsed = []
+    const seen = new Set(existing)
     for (let r = hi + 1; r < data.length; r++) {
       const row = data[r]
       if (!row || row.every((c) => c === '' || c == null)) continue
@@ -123,7 +124,9 @@ export default function ImportStatement({ categories, accounts, expenses, income
       }
       if (!amount || !date) continue
       const type = classify(text, amount)
-      const dup = existing.has(`${date}|${Math.abs(amount).toFixed(2)}`)
+      const sig = `${date}|${Math.abs(amount).toFixed(2)}`
+      const dup = seen.has(sig)
+      seen.add(sig)
       parsed.push({
         id: `${r}`, date, desc: merchant || text.trim().slice(0, 40), amount, type,
         categoryId: matchCat(guessCategory(text)), include: type !== 'ignorar' && !dup, dup,
@@ -239,6 +242,12 @@ export default function ImportStatement({ categories, accounts, expenses, income
             </div>
           ))}
           {!account && <div className="msg err" style={{ marginTop: 10 }}>Selecione a conta (no topo da tela) antes de importar.</div>}
+          {rows.some((r) => r.dup) && (
+            <button className="btn btn-ghost btn-sm" style={{ marginBottom: 10 }}
+              onClick={() => setRows((rs) => rs.filter((r) => !r.dup))}>
+              Remover duplicados ({rows.filter((r) => r.dup).length})
+            </button>
+          )}
           <div className="modal-actions">
             <button className="btn btn-ghost" style={{ flex: 1 }} onClick={() => setRows([])}>Cancelar</button>
             <button className="btn" style={{ flex: 2 }} disabled={busy || !nInc || !account} onClick={doImport}>
