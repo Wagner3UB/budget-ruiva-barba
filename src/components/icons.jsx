@@ -37,3 +37,25 @@ export const IconClose = ({ size = 22 }) => (
 export const IconChevronLeft = ({ size = 22 }) => (
   <svg {...base(size)}><polyline points="15 18 9 12 15 6" /></svg>
 )
+
+export const IconChart = ({ size = 18 }) => (
+  <svg {...base(size)}><line x1="4" y1="20" x2="4" y2="12" /><line x1="10" y1="20" x2="10" y2="4" /><line x1="16" y1="20" x2="16" y2="15" /><line x1="3" y1="20" x2="21" y2="20" /></svg>
+)
+export const IconReceipt = ({ size = 18 }) => (
+  <svg {...base(size)}><path d="M5 3h14v18l-2.5-1.3L14 21l-2-1.3L10 21l-2.5-1.3L5 21z" /><line x1="8.5" y1="8" x2="15.5" y2="8" /><line x1="8.5" y1="12" x2="15.5" y2="12" /></svg>
+)
+export const IconIncome = ({ size = 18 }) => (
+  <svg {...base(size)}><line x1="12" y1="4" x2="12" y2="15" /><polyline points="7 10 12 15 17 10" /><line x1="5" y1="20" x2="19" y2="20" /></svg>
+)
+export const IconTarget = ({ size = 18 }) => (
+  <svg {...base(size)}><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="5" /><circle cx="12" cy="12" r="1.5" /></svg>
+)
+export const IconHome = ({ size = 18 }) => (
+  <svg {...base(size)}><path d="M3 11l9-8 9 8" /><path d="M5 10v10h14V10" /></svg>
+)
+export const IconUser = ({ size = 18 }) => (
+  <svg {...base(size)}><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4 4-6 8-6s8 2 8 6" /></svg>
+)
+export const IconImport = ({ size = 18 }) => (
+  <svg {...base(size)}><path d="M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4" /><polyline points="8 11 12 15 16 11" /><line x1="12" y1="4" x2="12" y2="15" /></svg>
+)

@@ -345,3 +345,24 @@ input, select { font-family: inherit; }
 .item .x:hover { color: var(--danger); }
 .nav-burger:hover { background: rgba(255,255,255,.3); }
 .drawer-close:hover, .icon-btn:hover { background: #f1f5f9; opacity: 1; }
+
+/* ============ Header opção C: subheader branco com ícones ============ */
+.appheader { background: transparent; border-radius: 0; box-shadow: none; overflow: visible; }
+.appheader .topbar { background: var(--teal); padding: 16px 18px; }
+.appheader .topnav {
+  background: var(--card); border-top: none; border-bottom: 1px solid var(--border);
+  padding: 8px 12px; gap: 4px; overflow-x: auto;
+}
+.appheader .topnav button {
+  color: var(--muted); padding: 8px 13px; border-radius: 9px; font-size: 14px;
+  display: flex; align-items: center; gap: 6px; white-space: nowrap; background: none; border: none; cursor: pointer;
+}
+.appheader .topnav button svg { width: 18px; height: 18px; flex-shrink: 0; }
+.appheader .topnav button:hover { background: #f1f5f9; color: var(--text); }
+.appheader .topnav button.active { background: #e1f5ee; color: #0f6e56; font-weight: 600; }
+
+@media (max-width: 760px) {
+  .appheader .topnav { flex-direction: column; }
+  .appheader .topnav button { color: var(--muted); justify-content: flex-start; }
+  .appheader .topnav button.active { color: #0f6e56; }
+}

@@ -8,16 +8,16 @@ import Budgets from './components/Budgets'
 import PiggyBank from './components/PiggyBank'
 import ImportStatement from './components/ImportStatement'
 import { monthKey } from './lib/helpers'
-import { IconMenu, IconClose } from './components/icons'
+import { IconMenu, IconClose, IconChart, IconReceipt, IconIncome, IconTarget, IconHome, IconUser, IconImport } from './components/icons'
 
 const TABS = [
-  { id: 'resumo', label: 'Resumo', ic: '📊' },
-  { id: 'gastos', label: 'Gastos', ic: '🧾' },
-  { id: 'entradas', label: 'Entradas', ic: '💰' },
-  { id: 'orcamento', label: 'Orçam.', ic: '🎯' },
-  { id: 'cofrinho', label: 'Casa', ic: '🏠' },
-  { id: 'nathi', label: 'Nathi', ic: '🍓' },
-  { id: 'importar', label: 'Importar', ic: '📥' },
+  { id: 'resumo', label: 'Resumo', Icon: IconChart },
+  { id: 'gastos', label: 'Gastos', Icon: IconReceipt },
+  { id: 'entradas', label: 'Entradas', Icon: IconIncome },
+  { id: 'orcamento', label: 'Orçamento', Icon: IconTarget },
+  { id: 'cofrinho', label: 'Casa', Icon: IconHome },
+  { id: 'nathi', label: 'Nathi', Icon: IconUser },
+  { id: 'importar', label: 'Importar', Icon: IconImport },
 ]
 
 export default function App() {
@@ -125,7 +125,7 @@ export default function App() {
         {TABS.map((t) => (
           <button key={t.id} className={tab === t.id ? 'active' : ''}
             onClick={() => { setTab(t.id); setMenuOpen(false) }}>
-            <span className="ic">{t.ic}</span><span>{t.label}</span>
+            <t.Icon /><span>{t.label}</span>
           </button>
         ))}
       </nav>
