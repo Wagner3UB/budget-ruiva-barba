@@ -33,3 +33,7 @@ export const IconMenu = ({ size = 22 }) => (
 export const IconClose = ({ size = 22 }) => (
   <svg {...base(size)}><line x1="6" y1="6" x2="18" y2="18" /><line x1="18" y1="6" x2="6" y2="18" /></svg>
 )
+
+export const IconChevronLeft = ({ size = 22 }) => (
+  <svg {...base(size)}><polyline points="15 18 9 12 15 6" /></svg>
+)

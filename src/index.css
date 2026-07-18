@@ -239,3 +239,30 @@ input, select { font-family: inherit; }
 .side-nav-toggle:active { transform: scale(.94); }
 
 @media (min-width: 1024px) { .app { padding-bottom: 28px; } }
+
+/* ============ Gaveta lateral (drawer) à direita ============ */
+.drawer {
+  position: fixed; top: 50%; right: 0; z-index: 70;
+  display: flex; align-items: stretch;
+  transform: translateY(-50%) translateX(calc(100% - 34px));
+  transition: transform .28s cubic-bezier(.4,0,.2,1);
+}
+.drawer.open { transform: translateY(-50%) translateX(0); }
+.drawer-handle {
+  width: 34px; flex: 0 0 34px; background: var(--teal); color: #fff; border: none; cursor: pointer;
+  border-radius: 12px 0 0 12px; display: flex; align-items: center; justify-content: center;
+  box-shadow: -4px 0 16px rgba(0,0,0,.15);
+}
+.drawer-handle svg { transition: transform .28s ease; }
+.drawer.open .drawer-handle svg { transform: rotate(180deg); }
+.drawer-panel {
+  position: relative; background: #fff; border: 1px solid var(--border); border-left: none;
+  padding: 30px 8px 8px; display: flex; flex-direction: column; gap: 2px;
+  max-height: 50vh; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  box-shadow: -10px 0 34px rgba(0,0,0,.14); min-width: 168px;
+}
+.drawer-close {
+  position: absolute; top: 6px; right: 6px; background: none; border: none;
+  color: var(--muted); cursor: pointer; padding: 4px; border-radius: 8px; line-height: 0;
+}
+.drawer-close:hover { background: #f1f5f9; }
