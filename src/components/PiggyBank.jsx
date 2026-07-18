@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { supabase } from '../supabaseClient'
 import { IconEdit, IconTrash, IconInfo } from './icons'
 import { money, todayISO, parseAmount, fmtDate } from '../lib/helpers'
@@ -41,6 +41,7 @@ export default function PiggyBank({ piggy = 'casa', expenses, houseTaxes, taxPay
   const monthlyReserve = anualTotal / 12
 
   const opening = Number(piggyYear.find((y) => y.year === year && (y.piggy || 'casa') === piggy)?.opening || 0)
+  const monthlyAuto = Number(piggyYear.find((y) => y.year === year && (y.piggy || 'casa') === piggy)?.monthly || 0)
   const deposits = useMemo(
     () => expenses.filter((e) => e.piggy_deposit && (e.piggy || 'casa') === piggy && Number((e.date || '').slice(0, 4)) === year),
     [expenses, year, piggy])
@@ -63,7 +64,7 @@ export default function PiggyBank({ piggy = 'casa', expenses, houseTaxes, taxPay
       return
     }
     const { error } = await supabase.from('piggy_year').upsert(
-      { piggy, year, opening: Number.isFinite(n) ? n : 0 }, { onConflict: 'piggy,year' })
+      { piggy, year, opening: Number.isFinite(n) ? n : 0, monthly: monthlyAuto }, { onConflict: 'piggy,year' })
     if (error) { setOpenMsg('Erro ao salvar: ' + error.message); return }
     setOpenMsg(''); setEditOpen(false); setOpenVal(''); reload()
   }
@@ -131,6 +132,47 @@ export default function PiggyBank({ piggy = 'casa', expenses, houseTaxes, taxPay
     const { data } = await supabase.from('categories').insert({ name: cfg.category, ideal: 0, color: '#0f766e' }).select().single()
     return data?.id || null
   }
+
+  // ---------- reserva automática mensal ----------
+  const [editAuto, setEditAuto] = useState(false)
+  const [autoVal, setAutoVal] = useState('')
+  const [autoMsg, setAutoMsg] = useState('')
+  const saveAuto = async () => {
+    const n = parseAmount(autoVal)
+    if (autoVal.trim() !== '' && !Number.isFinite(n)) { setAutoMsg('Valor inválido — ex: 350,03'); return }
+    const { error } = await supabase.from('piggy_year').upsert(
+      { piggy, year, opening, monthly: Number.isFinite(n) ? n : 0 }, { onConflict: 'piggy,year' })
+    if (error) { setAutoMsg('Erro ao salvar: ' + error.message); return }
+    setAutoMsg(''); setEditAuto(false); setAutoVal(''); reload()
+  }
+
+  // Gera automaticamente o depósito de cada mês (ano corrente, até o mês atual)
+  useEffect(() => {
+    const nowY = new Date().getFullYear()
+    if (year !== nowY || !monthlyAuto) return
+    const gen = async () => {
+      const upTo = new Date().getMonth() + 1
+      const tag = 'Reserva automática'
+      const existing = new Set(
+        expenses
+          .filter((e) => e.piggy_deposit && (e.piggy || 'casa') === piggy && e.description === tag && Number((e.date || '').slice(0, 4)) === nowY)
+          .map((e) => Number((e.date || '').slice(5, 7)))
+      )
+      const missing = []
+      for (let m = 1; m <= upTo; m++) if (!existing.has(m)) missing.push(m)
+      if (!missing.length) return
+      const catId = await ensureDepositCategory()
+      const rows = missing.map((m) => ({
+        date: `${nowY}-${String(m).padStart(2, '0')}-01`,
+        category_id: catId, description: tag, place: 'Reserva automática',
+        amount: monthlyAuto, paid_by: cfg.depositor, pay_status: 'Sim', piggy_deposit: true, piggy,
+      }))
+      const { error } = await supabase.from('expenses').insert(rows)
+      if (!error) reload()
+    }
+    gen()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [piggy, year, monthlyAuto, expenses])
   const registerDeposit = async (e) => {
     e.preventDefault()
     const amt = depAmount ? num(depAmount) : Number(monthlyReserve.toFixed(2))
@@ -339,6 +381,33 @@ export default function PiggyBank({ piggy = 'casa', expenses, houseTaxes, taxPay
         <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: -4 }}>
           Dinheiro que sai da conta do {cfg.depositor} pra reserva (abate do Disponível dele/dela).
         </p>
+
+        <div style={{ background: '#f8fafc', border: '1px solid var(--border)', borderRadius: 10, padding: 12, marginBottom: 14 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <b>Reserva automática mensal</b>
+              <div className="meta">Gera o depósito de cada mês sozinho ({cfg.category})</div>
+            </div>
+            {!editAuto && (
+              <button className="icon-btn" title="editar" onClick={() => { setEditAuto(true); setAutoVal(String(monthlyAuto)) }}><IconEdit /></button>
+            )}
+          </div>
+          {editAuto ? (
+            <>
+              <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                <input style={{ flex: 1, padding: 10, border: '1px solid var(--border)', borderRadius: 10 }}
+                  inputMode="decimal" value={autoVal} onChange={(e) => setAutoVal(e.target.value)} placeholder="0,00 (0 = desligado)" />
+                <button className="btn btn-sm" onClick={saveAuto}>Salvar</button>
+              </div>
+              {autoMsg && <div className="msg err" style={{ marginTop: 8 }}>{autoMsg}</div>}
+            </>
+          ) : (
+            <div style={{ marginTop: 6, fontWeight: 700, color: monthlyAuto ? 'var(--teal)' : 'var(--muted)' }}>
+              {monthlyAuto ? `${money(monthlyAuto)} / mês` : 'desligada'}
+            </div>
+          )}
+        </div>
+
         <form id="dep-form" onSubmit={registerDeposit}>
           <div className="row">
             <div className="field"><label>Data</label>
