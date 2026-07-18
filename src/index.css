@@ -293,3 +293,29 @@ input, select { font-family: inherit; }
 
 /* desativa a gaveta antiga (não usada mais) */
 .drawer, .side-nav { display: none !important; }
+
+/* ============ Header unificado (título + menu) ============ */
+.appheader {
+  background: var(--teal);
+  border-radius: 0 0 20px 20px;
+  box-shadow: 0 4px 18px rgba(15,118,110,.18);
+  overflow: hidden;
+}
+.appheader .topbar { background: transparent; padding: 16px 18px 8px; }
+.appheader .topnav {
+  background: transparent; border-bottom: none; padding: 2px 12px 12px; gap: 5px;
+}
+.appheader .topnav button {
+  color: rgba(255,255,255,.82); padding: 8px 14px; border-radius: 999px; font-size: 14px;
+}
+.appheader .topnav button:hover { background: rgba(255,255,255,.15); color: #fff; }
+.appheader .topnav button.active {
+  background: #fff; color: var(--teal); font-weight: 700; box-shadow: 0 2px 8px rgba(0,0,0,.14);
+}
+.content { padding-top: 18px; }
+
+@media (max-width: 760px) {
+  .appheader .topnav.open { padding-bottom: 10px; }
+  .appheader .topnav button { color: #fff; }
+  .appheader .topnav button.active { color: var(--teal); }
+}

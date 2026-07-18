@@ -105,6 +105,7 @@ export default function App() {
 
   return (
     <div className="app">
+      <header className="appheader">
       <div className="topbar">
         <div>
           <h1>💶 Gastos do Casal</h1>
@@ -126,6 +127,7 @@ export default function App() {
           </button>
         ))}
       </nav>
+      </header>
 
       <div className="content">
         {tab === 'resumo' && <Dashboard {...shared} setMonth={setMonth} />}
