@@ -398,3 +398,7 @@ html, body { overflow-x: hidden; }
 .app { max-width: none !important; margin: 0 !important; }
 /* cinza (muted) mais escuro */
 :root { --muted: #475569; }
+
+/* ============ Correção final: header e conteúdo no MESMO container ============ */
+/* remove o full-bleed que causava desalinhamento (largura do scrollbar) */
+.appheader { width: auto !important; margin-left: 0 !important; }
