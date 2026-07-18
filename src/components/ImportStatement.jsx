@@ -64,6 +64,25 @@ function classify(text, amount) {
   return amount < 0 ? 'gasto' : 'entrada'
 }
 
+function parseCSV(text, delim) {
+  const rows = []; let row = []; let cur = ''; let inq = false
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i]
+    if (inq) {
+      if (ch === '"') { if (text[i + 1] === '"') { cur += '"'; i++ } else inq = false }
+      else cur += ch
+    } else {
+      if (ch === '"') inq = true
+      else if (ch === delim) { row.push(cur); cur = '' }
+      else if (ch === '\n') { row.push(cur); rows.push(row); row = []; cur = '' }
+      else if (ch === '\r') { /* ignora */ }
+      else cur += ch
+    }
+  }
+  if (cur !== '' || row.length) { row.push(cur); rows.push(row) }
+  return rows
+}
+
 export default function ImportStatement({ categories, accounts, expenses, incomes, reload }) {
   const [rows, setRows] = useState([])
   const [account, setAccount] = useState('')
@@ -91,10 +110,18 @@ export default function ImportStatement({ categories, accounts, expenses, income
     const file = e.target.files?.[0]
     if (!file) return
     setMsg('')
-    const buf = await file.arrayBuffer()
-    const wb = XLSX.read(buf, { cellDates: true })
-    const ws = wb.Sheets[wb.SheetNames[0]]
-    const data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' })
+    let data
+    if (/\.csv$/i.test(file.name)) {
+      const text = await file.text()
+      const firstLine = text.split('\n')[0]
+      const delim = (firstLine.split(';').length > firstLine.split(',').length) ? ';' : ','
+      data = parseCSV(text, delim)
+    } else {
+      const buf = await file.arrayBuffer()
+      const wb = XLSX.read(buf, { cellDates: true })
+      const ws = wb.Sheets[wb.SheetNames[0]]
+      data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' })
+    }
     const hi = data.findIndex((r) => {
       const low = r.map((c) => String(c).toLowerCase())
       const bbva = low.some((h) => h.includes('importo')) && low.some((h) => h.includes('causale'))
@@ -259,8 +286,8 @@ export default function ImportStatement({ categories, accounts, expenses, income
             </button>
           )}
           <div className="modal-actions">
-            <button className="btn btn-ghost" style={{ flex: 1 }} onClick={() => setRows([])}>Cancelar</button>
-            <button className="btn" style={{ flex: 2 }} disabled={busy || !nInc || !account} onClick={doImport}>
+            <button className="btn btn-ghost" onClick={() => setRows([])}>Cancelar</button>
+            <button className="btn" disabled={busy || !nInc || !account} onClick={doImport}>
               {busy ? 'Importando…' : `Importar ${nInc}`}
             </button>
           </div>
