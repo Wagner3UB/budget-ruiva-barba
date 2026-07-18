@@ -70,3 +70,9 @@ export const IconBerry = ({ size = 18 }) => (
     <line x1="14.5" y1="14" x2="14.5" y2="14.2" />
   </svg>
 )
+
+export const IconGem = ({ size = 18 }) => (
+  <svg {...base(size)}>
+    <path d="M6 3h12l3 5-9 13L3 8z" /><path d="M3 8h18" /><path d="M9 3l3 5 3-5" /><path d="M12 8v13" />
+  </svg>
+)
