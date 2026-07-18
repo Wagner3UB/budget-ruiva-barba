@@ -7,6 +7,7 @@ import Income from './components/Income'
 import Budgets from './components/Budgets'
 import PiggyBank from './components/PiggyBank'
 import { monthKey } from './lib/helpers'
+import { IconMenu, IconClose } from './components/icons'
 
 const TABS = [
   { id: 'resumo', label: 'Resumo', ic: '📊' },
@@ -21,6 +22,7 @@ export default function App() {
   const [session, setSession] = useState(null)
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState('resumo')
+  const [menuOpen, setMenuOpen] = useState(false)
   const [month, setMonth] = useState(monthKey())
 
   const [categories, setCategories] = useState([])
@@ -120,13 +122,20 @@ export default function App() {
         {tab === 'nathi' && <PiggyBank piggy="nathi" {...shared} />}
       </div>
 
-      <div className="tabbar">
-        {TABS.map((t) => (
-          <button key={t.id} className={tab === t.id ? 'active' : ''} onClick={() => setTab(t.id)}>
-            <span className="ic">{t.ic}</span>
-            {t.label}
-          </button>
-        ))}
+      <div className="side-nav">
+        {menuOpen && (
+          <div className="side-nav-panel">
+            {TABS.map((t) => (
+              <button key={t.id} className={`side-item ${tab === t.id ? 'active' : ''}`}
+                onClick={() => { setTab(t.id); setMenuOpen(false) }}>
+                <span className="ic">{t.ic}</span><span>{t.label}</span>
+              </button>
+            ))}
+          </div>
+        )}
+        <button className="side-nav-toggle" title="menu" onClick={() => setMenuOpen((o) => !o)}>
+          {menuOpen ? <IconClose /> : <IconMenu />}
+        </button>
       </div>
     </div>
   )

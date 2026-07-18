@@ -210,3 +210,32 @@ input, select { font-family: inherit; }
   font-size: 16px; line-height: 1; color: var(--muted); border-radius: 8px;
 }
 .icon-btn:hover { opacity: .6; }
+
+/* ============ Menu flutuante lateral (direita, centralizado) ============ */
+.app { padding-bottom: 28px; }
+.side-nav {
+  position: fixed; right: 14px; top: 50%; transform: translateY(-50%);
+  z-index: 70; display: flex; flex-direction: column; align-items: flex-end; gap: 10px;
+}
+.side-nav-panel {
+  background: #fff; border: 1px solid var(--border); border-radius: 16px;
+  box-shadow: 0 14px 44px rgba(0,0,0,.18); padding: 8px;
+  display: flex; flex-direction: column; gap: 2px;
+  max-height: 50vh; overflow-y: auto; -webkit-overflow-scrolling: touch;
+}
+.side-item {
+  display: flex; align-items: center; gap: 10px; background: none; border: none;
+  padding: 10px 14px; border-radius: 10px; font-size: 14px; color: var(--text);
+  white-space: nowrap; cursor: pointer; text-align: left;
+}
+.side-item .ic { font-size: 18px; line-height: 1; }
+.side-item:hover { background: #f1f5f9; }
+.side-item.active { background: var(--teal); color: #fff; font-weight: 600; }
+.side-nav-toggle {
+  width: 52px; height: 52px; border-radius: 50%; background: var(--teal); color: #fff;
+  border: none; box-shadow: 0 8px 24px rgba(15,118,110,.40);
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.side-nav-toggle:active { transform: scale(.94); }
+
+@media (min-width: 1024px) { .app { padding-bottom: 28px; } }
