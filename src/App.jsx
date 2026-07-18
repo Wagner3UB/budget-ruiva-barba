@@ -8,7 +8,7 @@ import Budgets from './components/Budgets'
 import PiggyBank from './components/PiggyBank'
 import ImportStatement from './components/ImportStatement'
 import { monthKey } from './lib/helpers'
-import { IconMenu, IconClose, IconChart, IconReceipt, IconIncome, IconTarget, IconHome, IconUser, IconImport } from './components/icons'
+import { IconMenu, IconClose, IconChart, IconReceipt, IconIncome, IconTarget, IconHome, IconUser, IconBerry, IconImport } from './components/icons'
 
 const TABS = [
   { id: 'resumo', label: 'Resumo', Icon: IconChart },
@@ -16,7 +16,7 @@ const TABS = [
   { id: 'entradas', label: 'Entradas', Icon: IconIncome },
   { id: 'orcamento', label: 'Orçamento', Icon: IconTarget },
   { id: 'cofrinho', label: 'Casa', Icon: IconHome },
-  { id: 'nathi', label: 'Nathi', Icon: IconUser },
+  { id: 'nathi', label: 'Nathi', Icon: IconBerry },
   { id: 'importar', label: 'Importar', Icon: IconImport },
 ]
 

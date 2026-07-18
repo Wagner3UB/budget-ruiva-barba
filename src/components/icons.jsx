@@ -59,3 +59,14 @@ export const IconUser = ({ size = 18 }) => (
 export const IconImport = ({ size = 18 }) => (
   <svg {...base(size)}><path d="M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4" /><polyline points="8 11 12 15 16 11" /><line x1="12" y1="4" x2="12" y2="15" /></svg>
 )
+
+export const IconBerry = ({ size = 18 }) => (
+  <svg {...base(size)}>
+    <path d="M12 21c-3.6 0-6.5-2.9-6.5-6.4 0-2.8 2.9-4.6 6.5-4.6s6.5 1.8 6.5 4.6C18.5 18.1 15.6 21 12 21z" />
+    <path d="M8.5 7.8C9.6 6.1 10.7 5.5 12 5.5s2.4.6 3.5 2.3" />
+    <path d="M12 5.5V3" />
+    <line x1="9.5" y1="14" x2="9.5" y2="14.2" />
+    <line x1="12" y1="15.5" x2="12" y2="15.7" />
+    <line x1="14.5" y1="14" x2="14.5" y2="14.2" />
+  </svg>
+)
