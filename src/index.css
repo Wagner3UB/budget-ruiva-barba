@@ -326,3 +326,22 @@ input, select { font-family: inherit; }
 .modal-head { display: flex; justify-content: space-between; align-items: center; }
 .modal-actions { display: flex; gap: 8px; margin-top: 14px; position: sticky; bottom: -18px; background: #fff; padding: 10px 0 2px; justify-content: flex-end; flex-wrap: wrap; }
 .modal-actions .btn { width: 200px; flex: 0 0 auto; }
+
+/* ============ Modal de importação: duas colunas ============ */
+.modal.import-modal { max-height: 95vh; display: flex; flex-direction: column; overflow: hidden; }
+.import-cols { display: flex; gap: 12px; flex: 1; min-height: 0; }
+.import-col { flex: 1; display: flex; flex-direction: column; min-height: 0; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.import-col h3 { margin: 0; padding: 9px 12px; background: #f8fafc; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; border-bottom: 1px solid var(--border); }
+.import-col-scroll { overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 0 12px; flex: 1; }
+.import-modal .modal-actions { position: static; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+@media (max-width: 640px) { .import-cols { flex-direction: column; overflow-y: auto; } .import-col-scroll { overflow: visible; } }
+
+/* ============ Hover identificável em todos os botões ============ */
+.btn { transition: background .15s ease, filter .15s ease; }
+.btn:hover:not(:disabled) { background: var(--teal-dark); }
+.btn.btn-ghost:hover:not(:disabled) { background: #e2e8f0; }
+.topbar button:hover { background: rgba(255,255,255,.28); }
+.month-nav button:hover { background: #f1f5f9; border-color: #cbd5e1; }
+.item .x:hover { color: var(--danger); }
+.nav-burger:hover { background: rgba(255,255,255,.3); }
+.drawer-close:hover, .icon-btn:hover { background: #f1f5f9; opacity: 1; }

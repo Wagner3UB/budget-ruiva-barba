@@ -58,7 +58,7 @@ const cleanING = (causale, descr) => {
 
 function classify(text, amount) {
   const t = text.toLowerCase()
-  if (t.includes('saldo inizial')) return 'ignorar'
+  if (t.includes('saldo inizial') || t.includes('saldo final')) return 'ignorar'
   if (t.includes('fixo') || t.includes('fixos')) return amount < 0 ? 'reserva' : 'ignorar'
   if (t.includes('giroconto') || t.includes('giro conto') || t.includes('trasferimento su conto')) return 'ignorar'
   return amount < 0 ? 'gasto' : 'entrada'
@@ -210,6 +210,40 @@ export default function ImportStatement({ categories, accounts, expenses, income
 
   const TYPES = ['gasto', 'entrada', 'reserva', 'ignorar']
   const nInc = rows.filter((r) => r.include && r.type !== 'ignorar').length
+  const saidas = rows.filter((r) => r.amount < 0)
+  const entradas = rows.filter((r) => r.amount >= 0)
+
+  const renderRow = (r) => (
+    <div className="item" key={r.id} style={{ opacity: r.include ? 1 : 0.5 }}>
+      <div className="info" style={{ gap: 8 }}>
+        <input type="checkbox" checked={r.include} onChange={(e) => upd(r.id, { include: e.target.checked })} />
+        <div>
+          <div className="desc">
+            <input value={r.desc} onChange={(e) => upd(r.id, { desc: e.target.value })}
+              style={{ border: 'none', borderBottom: '1px solid var(--border)', fontSize: 14, width: 130, background: 'transparent' }} />
+            {r.dup && <span className="tag" style={{ marginLeft: 6, background: '#fef3c7', color: '#92400e' }}>duplicado?</span>}
+          </div>
+          <div className="meta" style={{ display: 'flex', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
+            <span>{fmtDate(r.date)}</span>
+            <select value={r.type} onChange={(e) => upd(r.id, { type: e.target.value, include: e.target.value !== 'ignorar' })}
+              style={{ fontSize: 12, border: '1px solid var(--border)', borderRadius: 6, padding: '1px 4px' }}>
+              {TYPES.map((t) => <option key={t}>{t}</option>)}
+            </select>
+            {r.type === 'gasto' && (
+              <select value={r.categoryId} onChange={(e) => upd(r.id, { categoryId: e.target.value })}
+                style={{ fontSize: 12, border: '1px solid var(--border)', borderRadius: 6, padding: '1px 4px' }}>
+                <option value="">categoria…</option>
+                {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            )}
+          </div>
+        </div>
+      </div>
+      <span className="amt" style={{ color: r.amount < 0 ? 'var(--text)' : 'var(--green)' }}>
+        {r.amount < 0 ? money(Math.abs(r.amount)) : '+' + money(r.amount)}
+      </span>
+    </div>
+  )
 
   return (
     <>
@@ -239,52 +273,35 @@ export default function ImportStatement({ categories, accounts, expenses, income
 
       {rows.length > 0 && (
         <div className="modal-overlay" onClick={() => setRows([])}>
-        <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal import-modal" onClick={(e) => e.stopPropagation()}>
           <div className="modal-head">
             <h2 style={{ margin: 0 }}>Revisar importação ({rows.length})</h2>
             <button className="icon-btn" title="fechar" onClick={() => setRows([])}><IconClose size={18} /></button>
           </div>
-          <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 0 }}>
-            Ajuste o que precisar (descrição, tipo, categoria, incluir/excluir). Nada é gravado até você confirmar.
+          <p style={{ fontSize: 12, color: 'var(--muted)', margin: '2px 0 8px' }}>
+            Ajuste o que precisar. Nada é gravado até você confirmar.
           </p>
-          {rows.map((r) => (
-            <div className="item" key={r.id} style={{ opacity: r.include ? 1 : 0.5 }}>
-              <div className="info" style={{ gap: 8 }}>
-                <input type="checkbox" checked={r.include} onChange={(e) => upd(r.id, { include: e.target.checked })} />
-                <div>
-                  <div className="desc">
-                    <input value={r.desc} onChange={(e) => upd(r.id, { desc: e.target.value })}
-                      style={{ border: 'none', borderBottom: '1px solid var(--border)', fontSize: 15, width: 170, background: 'transparent' }} />
-                    {r.dup && <span className="tag" style={{ marginLeft: 6, background: '#fef3c7', color: '#92400e' }}>duplicado?</span>}
-                  </div>
-                  <div className="meta" style={{ display: 'flex', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
-                    <span>{fmtDate(r.date)}</span>
-                    <select value={r.type} onChange={(e) => upd(r.id, { type: e.target.value, include: e.target.value !== 'ignorar' })}
-                      style={{ fontSize: 12, border: '1px solid var(--border)', borderRadius: 6, padding: '1px 4px' }}>
-                      {TYPES.map((t) => <option key={t}>{t}</option>)}
-                    </select>
-                    {r.type === 'gasto' && (
-                      <select value={r.categoryId} onChange={(e) => upd(r.id, { categoryId: e.target.value })}
-                        style={{ fontSize: 12, border: '1px solid var(--border)', borderRadius: 6, padding: '1px 4px' }}>
-                        <option value="">categoria…</option>
-                        {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                      </select>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <span className="amt" style={{ color: r.amount < 0 ? 'var(--text)' : 'var(--green)' }}>
-                {r.amount < 0 ? money(Math.abs(r.amount)) : '+' + money(r.amount)}
-              </span>
-            </div>
-          ))}
-          {!account && <div className="msg err" style={{ marginTop: 10 }}>Selecione a conta (no topo da tela) antes de importar.</div>}
           {rows.some((r) => r.dup) && (
-            <button className="btn btn-ghost btn-sm" style={{ marginBottom: 10 }}
+            <button className="btn btn-ghost btn-sm" style={{ marginBottom: 10, alignSelf: 'flex-start' }}
               onClick={() => setRows((rs) => rs.filter((r) => !r.dup))}>
               Remover duplicados ({rows.filter((r) => r.dup).length})
             </button>
           )}
+          <div className="import-cols">
+            <div className="import-col">
+              <h3>Saídas ({saidas.length})</h3>
+              <div className="import-col-scroll">
+                {saidas.length ? saidas.map(renderRow) : <div className="empty">—</div>}
+              </div>
+            </div>
+            <div className="import-col">
+              <h3>Entradas ({entradas.length})</h3>
+              <div className="import-col-scroll">
+                {entradas.length ? entradas.map(renderRow) : <div className="empty">—</div>}
+              </div>
+            </div>
+          </div>
+          {!account && <div className="msg err" style={{ marginTop: 10 }}>Selecione a conta (no topo da tela) antes de importar.</div>}
           <div className="modal-actions">
             <button className="btn btn-ghost" onClick={() => setRows([])}>Cancelar</button>
             <button className="btn" disabled={busy || !nInc || !account} onClick={doImport}>
