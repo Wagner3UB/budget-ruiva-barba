@@ -11,7 +11,6 @@ export default function Income({ incomes, expenses, month, balances, reload }) {
   const [desc, setDesc] = useState('')
   const [amount, setAmount] = useState('')
   const [busy, setBusy] = useState(false)
-  const [toReserve, setToReserve] = useState(false)
   const [editOpening, setEditOpening] = useState(false)
   const [openVals, setOpenVals] = useState({})
 
@@ -40,9 +39,9 @@ export default function Income({ incomes, expenses, month, balances, reload }) {
     setBusy(true)
     await supabase.from('incomes').insert({
       month: date.slice(0, 7), date, person,
-      description: desc || 'Entrada', amount: num(amount), to_reserve: toReserve,
+      description: desc || 'Entrada', amount: num(amount),
     })
-    setDesc(''); setAmount(''); setToReserve(false); setBusy(false); reload()
+    setDesc(''); setAmount(''); setBusy(false); reload()
   }
   const remove = async (id) => { await supabase.from('incomes').delete().eq('id', id); reload() }
 
@@ -122,10 +121,6 @@ export default function Income({ incomes, expenses, month, balances, reload }) {
             <label>Descrição</label>
             <input type="text" value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="ex: Salário, Extra, 13º…" />
           </div>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, marginBottom: 12 }}>
-            <input type="checkbox" checked={toReserve} onChange={(e) => setToReserve(e.target.checked)} />
-            Enviar às reservas (poupança, não conta no Disponível)
-          </label>
           <button className="btn" disabled={busy}>{busy ? 'Salvando…' : 'Adicionar entrada'}</button>
         </form>
       </div>
@@ -139,14 +134,12 @@ export default function Income({ incomes, expenses, month, balances, reload }) {
             <div className="item" key={i.id}>
               <div className="info">
                 <div>
-                  <div className="desc">{i.description}
-                    {i.to_reserve && <span className="tag" style={{ marginLeft: 6, background: '#ccfbf1', color: '#0f766e' }}>→ reservas</span>}
-                  </div>
+                  <div className="desc">{i.description}</div>
                   <div className="meta">{i.person}{i.date ? ` · ${fmtDate(i.date)}` : ''}</div>
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span className="amt" style={{ color: i.to_reserve ? 'var(--teal)' : 'var(--green)' }}>+{money(i.amount)}</span>
+                <span className="amt" style={{ color: 'var(--green)' }}>+{money(i.amount)}</span>
                 <button className="x" title="excluir" onClick={() => remove(i.id)}><IconTrash /></button>
               </div>
             </div>

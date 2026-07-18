@@ -47,14 +47,9 @@ export default function PiggyBank({ piggy = 'casa', expenses, incomes = [], fixe
   const depositsTotal = deposits.reduce((s, e) => s + Number(e.amount), 0)
   const person = piggy === 'nathi' ? 'Nathi' : 'Gui'
   const inYear = (d) => Number((d || '').slice(0, 4)) === year
-  const toResFixed = new Set(fixedExpenses.filter((f) => f.to_reserve).map((f) => f.id))
-  const fromFixed = expenses
-    .filter((e) => e.fixed_id && toResFixed.has(e.fixed_id) && e.paid_by === person && inYear(e.date))
+  const aportes = expenses
+    .filter((e) => (e.to_reserve || e.piggy_deposit) && e.paid_by === person && inYear(e.date))
     .reduce((s, e) => s + Number(e.amount), 0)
-  const fromIncome = incomes
-    .filter((i) => i.to_reserve && i.person === person && Number((i.month || '').slice(0, 4)) === year)
-    .reduce((s, i) => s + Number(i.amount), 0)
-  const aportes = depositsTotal + fromFixed + fromIncome
   const paidTotal = payments.filter((p) => p.paid).reduce((s, p) => s + Number(p.amount), 0)
   const balance = opening + aportes - paidTotal
 
