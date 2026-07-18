@@ -8,7 +8,7 @@ import Budgets from './components/Budgets'
 import PiggyBank from './components/PiggyBank'
 import ImportStatement from './components/ImportStatement'
 import { monthKey } from './lib/helpers'
-import { IconMenu, IconClose, IconChart, IconReceipt, IconIncome, IconTarget, IconHome, IconGem, IconImport } from './components/icons'
+import { IconMenu, IconClose, IconLogout, IconChart, IconReceipt, IconIncome, IconTarget, IconHome, IconGem, IconImport } from './components/icons'
 
 const TABS = [
   { id: 'resumo', label: 'Resumo', Icon: IconChart },
@@ -114,10 +114,10 @@ export default function App() {
           <div className="sub">{session.user.email}</div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <button className="nav-burger" title="menu" onClick={() => setMenuOpen((o) => !o)}>
+          <button className="hicon nav-burger" title="menu" onClick={() => setMenuOpen((o) => !o)}>
             {menuOpen ? <IconClose /> : <IconMenu />}
           </button>
-          <button onClick={() => supabase.auth.signOut()}>Sair</button>
+          <button className="hicon" title="Sair" onClick={() => supabase.auth.signOut()}><IconLogout /></button>
         </div>
       </div>
 

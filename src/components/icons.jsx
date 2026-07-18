@@ -76,3 +76,7 @@ export const IconGem = ({ size = 18 }) => (
     <path d="M6 3h12l3 5-9 13L3 8z" /><path d="M3 8h18" /><path d="M9 3l3 5 3-5" /><path d="M12 8v13" />
   </svg>
 )
+
+export const IconLogout = ({ size = 20 }) => (
+  <svg {...base(size)}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
+)

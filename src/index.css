@@ -366,3 +366,19 @@ input, select { font-family: inherit; }
   .appheader .topnav button { color: var(--muted); justify-content: flex-start; }
   .appheader .topnav button.active { color: #0f6e56; }
 }
+
+/* ============ Header 100vw + botões de ícone iguais ============ */
+html, body { overflow-x: hidden; }
+.app { padding-left: 0; padding-right: 0; }
+.appheader { width: 100vw; margin-left: calc(50% - 50vw); }
+.content { padding-left: 16px; padding-right: 16px; }
+@media (min-width: 1024px) { .content { padding-left: 28px; padding-right: 28px; } }
+
+.hicon {
+  width: 40px; height: 40px; border-radius: 8px; background: rgba(255,255,255,.16);
+  color: #fff; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.hicon:hover { background: rgba(255,255,255,.3); }
+/* o hambúrguer só aparece no mobile (nav visível no desktop) */
+.nav-burger { display: none; }
+@media (max-width: 760px) { .hicon.nav-burger { display: flex; } }
