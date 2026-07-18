@@ -393,3 +393,8 @@ html, body { overflow-x: hidden; }
 .content,
 .appheader .topbar,
 .appheader .topnav { padding-left: 2.5vw !important; padding-right: 2.5vw !important; }
+
+/* ============ App sempre largura total (alinha header e conteúdo) ============ */
+.app { max-width: none !important; margin: 0 !important; }
+/* cinza (muted) mais escuro */
+:root { --muted: #475569; }
