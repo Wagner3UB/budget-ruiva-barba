@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { supabase } from '../supabaseClient'
-import { money, todayISO, counted, parseAmount, fmtDate } from '../lib/helpers'
+import { IconTrash } from './icons'
+import { money, todayISO, counted, parseAmount, fmtDate, disponivelOf } from '../lib/helpers'
 
 const PEOPLE = ['Gui', 'Nathi']
 
@@ -10,6 +11,7 @@ export default function Income({ incomes, expenses, month, balances, reload }) {
   const [desc, setDesc] = useState('')
   const [amount, setAmount] = useState('')
   const [busy, setBusy] = useState(false)
+  const [toReserve, setToReserve] = useState(false)
   const [editOpening, setEditOpening] = useState(false)
   const [openVals, setOpenVals] = useState({})
 
@@ -26,13 +28,7 @@ export default function Income({ incomes, expenses, month, balances, reload }) {
       .reduce((s, e) => s + Number(e.amount), 0)
 
   // Disponivel = saldo inicial + soma(entradas - saidas) de TODOS os meses ate o mes atual (inclusive)
-  const disponivel = (p) => {
-    const inc = incomes.filter((i) => i.person === p && i.month <= month)
-      .reduce((s, i) => s + Number(i.amount), 0)
-    const out = expenses.filter((e) => e.paid_by === p && counted(e) && (e.date || '').slice(0, 7) <= month)
-      .reduce((s, e) => s + Number(e.amount), 0)
-    return openingOf(p) + inc - out
-  }
+  const disponivel = (p) => disponivelOf(p, { incomes, expenses, balances }, month)
 
   const monthIncomes = useMemo(
     () => incomes.filter((i) => i.month === month).sort((a, b) => a.person.localeCompare(b.person)),
@@ -44,9 +40,9 @@ export default function Income({ incomes, expenses, month, balances, reload }) {
     setBusy(true)
     await supabase.from('incomes').insert({
       month: date.slice(0, 7), date, person,
-      description: desc || 'Entrada', amount: num(amount),
+      description: desc || 'Entrada', amount: num(amount), to_reserve: toReserve,
     })
-    setDesc(''); setAmount(''); setBusy(false); reload()
+    setDesc(''); setAmount(''); setToReserve(false); setBusy(false); reload()
   }
   const remove = async (id) => { await supabase.from('incomes').delete().eq('id', id); reload() }
 
@@ -126,6 +122,10 @@ export default function Income({ incomes, expenses, month, balances, reload }) {
             <label>Descrição</label>
             <input type="text" value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="ex: Salário, Extra, 13º…" />
           </div>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, marginBottom: 12 }}>
+            <input type="checkbox" checked={toReserve} onChange={(e) => setToReserve(e.target.checked)} />
+            Enviar às reservas (poupança, não conta no Disponível)
+          </label>
           <button className="btn" disabled={busy}>{busy ? 'Salvando…' : 'Adicionar entrada'}</button>
         </form>
       </div>
@@ -139,13 +139,15 @@ export default function Income({ incomes, expenses, month, balances, reload }) {
             <div className="item" key={i.id}>
               <div className="info">
                 <div>
-                  <div className="desc">{i.description}</div>
+                  <div className="desc">{i.description}
+                    {i.to_reserve && <span className="tag" style={{ marginLeft: 6, background: '#ccfbf1', color: '#0f766e' }}>→ reservas</span>}
+                  </div>
                   <div className="meta">{i.person}{i.date ? ` · ${fmtDate(i.date)}` : ''}</div>
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span className="amt" style={{ color: 'var(--green)' }}>+{money(i.amount)}</span>
-                <button className="x" onClick={() => remove(i.id)}>✕</button>
+                <span className="amt" style={{ color: i.to_reserve ? 'var(--teal)' : 'var(--green)' }}>+{money(i.amount)}</span>
+                <button className="x" title="excluir" onClick={() => remove(i.id)}><IconTrash /></button>
               </div>
             </div>
           ))

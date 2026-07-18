@@ -42,7 +42,7 @@ export const fixedActiveIn = (f, month) =>
 export function disponivelOf(person, { incomes = [], expenses = [], balances = [] }, month) {
   const opening = Number(balances.find((b) => b.person === person)?.opening || 0)
   const inc = incomes
-    .filter((i) => i.person === person && (!month || i.month <= month))
+    .filter((i) => i.person === person && !i.to_reserve && (!month || i.month <= month))
     .reduce((s, i) => s + Number(i.amount), 0)
   const out = expenses
     .filter((e) => e.paid_by === person && counted(e) && (!month || (e.date || '').slice(0, 7) <= month))
@@ -51,16 +51,31 @@ export function disponivelOf(person, { incomes = [], expenses = [], balances = [
 }
 
 // Saldo de um cofrinho ('casa' | 'nathi') no ano = inicial + depósitos − taxas pagas
-export function cofrinhoBalance(piggy, { piggyYear = [], houseTaxes = [], taxPayments = [], expenses = [] }, year) {
+export const PIGGY_PERSON = { casa: 'Gui', nathi: 'Nathi' }
+
+export function cofrinhoBalance(piggy, data, year) {
+  const { piggyYear = [], houseTaxes = [], taxPayments = [], expenses = [], incomes = [], fixedExpenses = [] } = data
+  const person = PIGGY_PERSON[piggy] || 'Gui'
+  const inYear = (d) => Number((d || '').slice(0, 4)) === year
   const opening = Number(piggyYear.find((y) => y.year === year && (y.piggy || 'casa') === piggy)?.opening || 0)
-  const deposits = expenses
-    .filter((e) => e.piggy_deposit && (e.piggy || 'casa') === piggy && Number((e.date || '').slice(0, 4)) === year)
+  // depósitos manuais (piggy_deposit)
+  const manual = expenses
+    .filter((e) => e.piggy_deposit && (e.piggy || 'casa') === piggy && inYear(e.date))
     .reduce((s, e) => s + Number(e.amount), 0)
+  // gastos fixos marcados "às reservas" (quando pagos, viram despesa com fixed_id)
+  const toResFixed = new Set(fixedExpenses.filter((f) => f.to_reserve).map((f) => f.id))
+  const fromFixed = expenses
+    .filter((e) => e.fixed_id && toResFixed.has(e.fixed_id) && e.paid_by === person && inYear(e.date))
+    .reduce((s, e) => s + Number(e.amount), 0)
+  // entradas marcadas "às reservas"
+  const fromIncome = incomes
+    .filter((i) => i.to_reserve && i.person === person && Number((i.month || '').slice(0, 4)) === year)
+    .reduce((s, i) => s + Number(i.amount), 0)
   const itemIds = new Set(houseTaxes.filter((t) => t.year === year && (t.piggy || 'casa') === piggy).map((t) => t.id))
   const paid = taxPayments
     .filter((p) => itemIds.has(p.tax_id) && p.paid)
     .reduce((s, p) => s + Number(p.amount), 0)
-  return opening + deposits - paid
+  return opening + manual + fromFixed + fromIncome - paid
 }
 
 // Converte "2.120,36" / "350,03" / "1000.50" em número. Retorna NaN se inválido.

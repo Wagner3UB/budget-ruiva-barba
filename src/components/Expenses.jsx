@@ -96,6 +96,7 @@ export default function Expenses({ categories, monthExpenses, accounts, fixedExp
   const [fDay, setFDay] = useState('1')
   const [fStart, setFStart] = useState(monthKey())
   const [fEnd, setFEnd] = useState('')
+  const [fToReserve, setFToReserve] = useState(false)
 
   const addFixed = async (e) => {
     e.preventDefault()
@@ -106,9 +107,9 @@ export default function Expenses({ categories, monthExpenses, accounts, fixedExp
       amount: parseAmount(fAmount),
       paid_by: fWho, account: fAcc || null,
       day_of_month: Number(fDay) || 1,
-      start_month: fStart, end_month: fEnd || null, active: true,
+      start_month: fStart, end_month: fEnd || null, active: true, to_reserve: fToReserve,
     })
-    setFCat(''); setFAmount(''); setFAcc(''); setFDay('1'); setFEnd(''); reload()
+    setFCat(''); setFAmount(''); setFAcc(''); setFDay('1'); setFEnd(''); setFToReserve(false); reload()
   }
   const updateFixedAmount = async (f, val) => {
     await supabase.from('fixed_expenses').update({ amount: parseAmount(val) || 0 }).eq('id', f.id)
@@ -185,7 +186,7 @@ export default function Expenses({ categories, monthExpenses, accounts, fixedExp
                     <div className="info">
                       <span className="dot" style={{ background: catById[f.category_id]?.color || PALETTE[(i + 12) % PALETTE.length] }} />
                       <div>
-                        <div className="desc">{catById[f.category_id]?.name || f.description}</div>
+                        <div className="desc">{catById[f.category_id]?.name || f.description}{f.to_reserve && <span className="tag" style={{ marginLeft: 6, background: '#ccfbf1', color: '#0f766e' }}>→ reservas</span>}</div>
                         <div className="meta">dia {f.day_of_month} · {f.paid_by}{f.account ? ` · ${f.account}` : ''}</div>
                       </div>
                     </div>
@@ -247,6 +248,10 @@ export default function Expenses({ categories, monthExpenses, accounts, fixedExp
               <div className="field"><label>Fim (opcional)</label>
                 <input type="month" value={fEnd} onChange={(e) => setFEnd(e.target.value)} /></div>
             </div>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, margin: '4px 0 12px' }}>
+              <input type="checkbox" checked={fToReserve} onChange={(e) => setFToReserve(e.target.checked)} />
+              Enviar às reservas (ao pagar, entra na poupança)
+            </label>
             <button className="btn btn-ghost">Adicionar gasto fixo</button>
           </form>
         )}
