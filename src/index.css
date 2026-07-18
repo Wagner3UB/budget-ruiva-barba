@@ -382,3 +382,9 @@ html, body { overflow-x: hidden; }
 /* o hambúrguer só aparece no mobile (nav visível no desktop) */
 .nav-burger { display: none; }
 @media (max-width: 760px) { .hicon.nav-burger { display: flex; } }
+
+/* ============ Alinhar conteúdo do header com o conteúdo ============ */
+.appheader .topbar, .appheader .topnav { padding-left: 16px; padding-right: 16px; }
+@media (min-width: 1024px) {
+  .appheader .topbar, .appheader .topnav { padding-left: 28px; padding-right: 28px; }
+}

@@ -110,7 +110,7 @@ export default function App() {
       <header className="appheader">
       <div className="topbar">
         <div>
-          <h1>💶 Gastos do Casal</h1>
+          <h1>Gastos do Casal</h1>
           <div className="sub">{session.user.email}</div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
