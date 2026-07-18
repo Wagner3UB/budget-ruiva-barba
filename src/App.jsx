@@ -6,6 +6,7 @@ import Expenses from './components/Expenses'
 import Income from './components/Income'
 import Budgets from './components/Budgets'
 import PiggyBank from './components/PiggyBank'
+import ImportStatement from './components/ImportStatement'
 import { monthKey } from './lib/helpers'
 import { IconMenu, IconClose } from './components/icons'
 
@@ -16,6 +17,7 @@ const TABS = [
   { id: 'orcamento', label: 'Orçam.', ic: '🎯' },
   { id: 'cofrinho', label: 'Casa', ic: '🏠' },
   { id: 'nathi', label: 'Nathi', ic: '🍓' },
+  { id: 'importar', label: 'Importar', ic: '📥' },
 ]
 
 export default function App() {
@@ -136,6 +138,7 @@ export default function App() {
         {tab === 'orcamento' && <Budgets {...shared} />}
         {tab === 'cofrinho' && <PiggyBank piggy="casa" {...shared} />}
         {tab === 'nathi' && <PiggyBank piggy="nathi" {...shared} />}
+        {tab === 'importar' && <ImportStatement {...shared} />}
       </div>
     </div>
   )
