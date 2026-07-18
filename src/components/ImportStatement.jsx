@@ -174,6 +174,7 @@ export default function ImportStatement({ categories, accounts, expenses, income
   }
 
   const upd = (id, patch) => setRows((rs) => rs.map((r) => (r.id === id ? { ...r, ...patch } : r)))
+  const setMany = (list, val) => { const ids = new Set(list.map((r) => r.id)); setRows((rs) => rs.map((r) => (ids.has(r.id) ? { ...r, include: val } : r))) }
 
   const ensureCat = async (name) => {
     const f = categories.find((c) => c.name.toLowerCase() === name.toLowerCase())
@@ -289,13 +290,19 @@ export default function ImportStatement({ categories, accounts, expenses, income
           )}
           <div className="import-cols">
             <div className="import-col">
-              <h3>Saídas ({saidas.length})</h3>
+              <h3 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <input type="checkbox" checked={saidas.length > 0 && saidas.every((r) => r.include)}
+                  onChange={(e) => setMany(saidas, e.target.checked)} /> Saídas ({saidas.length})
+              </h3>
               <div className="import-col-scroll">
                 {saidas.length ? saidas.map(renderRow) : <div className="empty">—</div>}
               </div>
             </div>
             <div className="import-col">
-              <h3>Entradas ({entradas.length})</h3>
+              <h3 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <input type="checkbox" checked={entradas.length > 0 && entradas.every((r) => r.include)}
+                  onChange={(e) => setMany(entradas, e.target.checked)} /> Entradas ({entradas.length})
+              </h3>
               <div className="import-col-scroll">
                 {entradas.length ? entradas.map(renderRow) : <div className="empty">—</div>}
               </div>
