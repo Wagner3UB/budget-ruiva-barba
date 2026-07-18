@@ -76,12 +76,16 @@ export default function ImportStatement({ categories, accounts, expenses, income
   }, [categories])
   const matchCat = (name) => catByName[name.toLowerCase()]?.id || ''
 
-  const existing = useMemo(() => {
-    const set = new Set()
-    for (const e of expenses) set.add(`${e.date}|${Number(e.amount).toFixed(2)}`)
-    for (const i of incomes) set.add(`${i.date}|${Number(i.amount).toFixed(2)}`)
-    return set
+  // mapa: valor -> lista de datas já existentes (p/ detectar duplicado por valor + data próxima)
+  const existByAmount = useMemo(() => {
+    const m = {}
+    const add = (amt, date) => { const k = Math.abs(Number(amt)).toFixed(2); (m[k] = m[k] || []).push(date) }
+    for (const e of expenses) add(e.amount, e.date)
+    for (const i of incomes) add(i.amount, i.date)
+    return m
   }, [expenses, incomes])
+  const DUP_WINDOW = 4 // dias de tolerância entre datas
+  const daysBetween = (a, b) => Math.abs((new Date(a) - new Date(b)) / 86400000)
 
   const onFile = async (e) => {
     const file = e.target.files?.[0]
@@ -102,7 +106,13 @@ export default function ImportStatement({ categories, accounts, expenses, income
     const col = (name) => head.findIndex((h) => h.includes(name))
     const isING = head.some((h) => h.includes('uscite'))
     const parsed = []
-    const seen = new Set(existing)
+    const localMap = {}
+    for (const k in existByAmount) localMap[k] = [...existByAmount[k]]
+    const isDup = (amt, date) => {
+      const k = Math.abs(amt).toFixed(2)
+      const arr = localMap[k]
+      return !!arr && arr.some((d) => d && daysBetween(d, date) <= DUP_WINDOW)
+    }
     for (let r = hi + 1; r < data.length; r++) {
       const row = data[r]
       if (!row || row.every((c) => c === '' || c == null)) continue
@@ -124,9 +134,9 @@ export default function ImportStatement({ categories, accounts, expenses, income
       }
       if (!amount || !date) continue
       const type = classify(text, amount)
-      const sig = `${date}|${Math.abs(amount).toFixed(2)}`
-      const dup = seen.has(sig)
-      seen.add(sig)
+      const dup = isDup(amount, date)
+      const k = Math.abs(amount).toFixed(2)
+      ;(localMap[k] = localMap[k] || []).push(date)
       parsed.push({
         id: `${r}`, date, desc: merchant || text.trim().slice(0, 40), amount, type,
         categoryId: matchCat(guessCategory(text)), include: type !== 'ignorar' && !dup, dup,
@@ -218,7 +228,7 @@ export default function ImportStatement({ categories, accounts, expenses, income
                   <div className="desc">
                     <input value={r.desc} onChange={(e) => upd(r.id, { desc: e.target.value })}
                       style={{ border: 'none', borderBottom: '1px solid var(--border)', fontSize: 15, width: 170, background: 'transparent' }} />
-                    {r.dup && <span className="tag" style={{ marginLeft: 6, background: '#fef3c7', color: '#92400e' }}>duplicado</span>}
+                    {r.dup && <span className="tag" style={{ marginLeft: 6, background: '#fef3c7', color: '#92400e' }}>duplicado?</span>}
                   </div>
                   <div className="meta" style={{ display: 'flex', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
                     <span>{fmtDate(r.date)}</span>
