@@ -2,11 +2,13 @@ import { useMemo, useRef, useState } from 'react'
 import { supabase } from '../supabaseClient'
 import { IconEdit, IconTrash, IconGear, IconInfo } from './icons'
 import { money, todayISO, monthKey, daysInMonth, fixedActiveIn, PALETTE, parseAmount, fmtDate } from '../lib/helpers'
+import KpiSummary from './KpiSummary'
 
 const PAY = ['Não', 'Sim', 'Não contabilizado']
 const WHO = ['Gui', 'Nathi', 'Casal']
 
-export default function Expenses({ categories, monthExpenses, accounts, fixedExpenses, month, reload }) {
+export default function Expenses(props) {
+  const { categories, monthExpenses, accounts, fixedExpenses, month, reload } = props
   const catById = useMemo(
     () => Object.fromEntries(categories.map((c) => [c.id, c])), [categories])
 
@@ -162,6 +164,7 @@ export default function Expenses({ categories, monthExpenses, accounts, fixedExp
   return (
     <>
       {pop && (<div className="note-pop" style={{ left: pop.x, top: pop.y }}>{pop.text}</div>)}
+      <KpiSummary {...props} />
       {/* ---------- FIXOS DO MES ---------- */}
       <div className="card">
         <h2 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
