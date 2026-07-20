@@ -360,29 +360,6 @@ export default function Expenses(props) {
           })
         )}
       </div>
-
-      {/* ---------- CONTAS ---------- */}
-      <div className="card">
-        <h2 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          Contas / Bancos
-          <button className="icon-btn" title={manageAcc ? 'fechar' : 'gerir'} onClick={() => setManageAcc((m) => !m)}><IconGear /></button>
-        </h2>
-        {manageAcc && (
-          <>
-            {accounts.map((a) => (
-              <div className="item" key={a.id}>
-                <span className="desc">{a.name}</span>
-                <button className="x" title="excluir" onClick={() => delAccount(a.id)}><IconTrash /></button>
-              </div>
-            ))}
-            <form onSubmit={addAccount} style={{ marginTop: 10, display: 'flex', gap: 8 }}>
-              <input style={{ flex: 1, padding: 10, border: '1px solid var(--border)', borderRadius: 10 }}
-                value={newAcc} onChange={(e) => setNewAcc(e.target.value)} placeholder="Nova conta (ex: Revolut)" />
-              <button className="btn btn-sm">Add</button>
-            </form>
-          </>
-        )}
-      </div>
     </>
   )
 }

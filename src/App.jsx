@@ -7,8 +7,9 @@ import Income from './components/Income'
 import Budgets from './components/Budgets'
 import PiggyBank from './components/PiggyBank'
 import ImportStatement from './components/ImportStatement'
+import Settings from './components/Settings'
 import { monthKey } from './lib/helpers'
-import { IconMenu, IconClose, IconLogout, IconChart, IconReceipt, IconIncome, IconTarget, IconHome, IconGem, IconImport } from './components/icons'
+import { IconMenu, IconClose, IconLogout, IconChart, IconReceipt, IconIncome, IconTarget, IconHome, IconGem, IconImport, IconGear } from './components/icons'
 
 const TABS = [
   { id: 'resumo', label: 'Resumo', Icon: IconChart },
@@ -117,6 +118,7 @@ export default function App() {
           <button className="hicon nav-burger" title="menu" onClick={() => setMenuOpen((o) => !o)}>
             {menuOpen ? <IconClose /> : <IconMenu />}
           </button>
+          <button className={`hicon ${tab === 'admin' ? 'hicon-on' : ''}`} title="Admin" onClick={() => setTab('admin')}><IconGear /></button>
           <button className="hicon" title="Sair" onClick={() => supabase.auth.signOut()}><IconLogout /></button>
         </div>
       </div>
@@ -139,6 +141,7 @@ export default function App() {
         {tab === 'cofrinho' && <PiggyBank piggy="casa" {...shared} />}
         {tab === 'nathi' && <PiggyBank piggy="nathi" {...shared} />}
         {tab === 'importar' && <ImportStatement {...shared} />}
+        {tab === 'admin' && <Settings {...shared} />}
       </div>
     </div>
   )
