@@ -295,7 +295,10 @@ export default function PiggyBank({ piggy = 'casa', expenses, incomes = [], fixe
                 <div style={{ marginTop: 4 }}>
                   {Object.values(payMap[it.id] || {}).sort((a, b) => a.month - b.month).map((p) => (
                     <div className="item" key={p.id} style={{ padding: '8px 0' }}>
-                      <span className="desc">{MESES[p.month - 1]} — {money(p.amount)}</span>
+                      <div>
+                        <div className="desc">{MESES[p.month - 1]} — {money(p.amount)}</div>
+                        {p.note && <div className="meta">{p.note}</div>}
+                      </div>
                       <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                         {p.paid && (
                           <button className="icon-btn"
