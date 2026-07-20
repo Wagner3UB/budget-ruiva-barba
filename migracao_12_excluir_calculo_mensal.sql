@@ -1,0 +1,5 @@
+-- ============================================================
+--  Gastos do Casal - Migracao 12 (vencimento fora do cálculo mensal)
+--  Cole no SQL Editor do Supabase e clique em RUN. Nao apaga nada.
+-- ============================================================
+alter table tax_payments add column if not exists exclude_monthly boolean default false;

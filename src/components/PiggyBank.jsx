@@ -38,7 +38,8 @@ export default function PiggyBank({ piggy = 'casa', expenses, incomes = [], fixe
   const itemTotal = (id) => Object.values(payMap[id] || {}).reduce((s, p) => s + Number(p.amount), 0)
   const monthTotal = (mo) => payments.filter((p) => p.month === mo).reduce((s, p) => s + Number(p.amount), 0)
   const anualTotal = payments.reduce((s, p) => s + Number(p.amount), 0)
-  const monthlyReserve = anualTotal / 12
+  const reserveBase = payments.filter((p) => !p.exclude_monthly).reduce((s, p) => s + Number(p.amount), 0)
+  const monthlyReserve = reserveBase / 12
 
   const opening = Number(piggyYear.find((y) => y.year === year && (y.piggy || 'casa') === piggy)?.opening || 0)
   const deposits = useMemo(
@@ -91,12 +92,13 @@ export default function PiggyBank({ piggy = 'casa', expenses, incomes = [], fixe
   const [vNote, setVNote] = useState('')
   const [editingId, setEditingId] = useState(null)
   const [editingTaxId, setEditingTaxId] = useState(null)
-  const clearForm = () => { setVName(''); setVMonth(''); setVAmount(''); setVNote(''); setEditingId(null); setEditingTaxId(null) }
+  const [vExclude, setVExclude] = useState(false)
+  const clearForm = () => { setVName(''); setVMonth(''); setVAmount(''); setVNote(''); setVExclude(false); setEditingId(null); setEditingTaxId(null) }
   const addVencimento = async (e) => {
     e.preventDefault()
     if (!vName || !vMonth || !vAmount) return
     if (editingId) {
-      await supabase.from('tax_payments').update({ month: Number(vMonth), amount: num(vAmount), note: vNote || null }).eq('id', editingId)
+      await supabase.from('tax_payments').update({ month: Number(vMonth), amount: num(vAmount), note: vNote || null, exclude_monthly: vExclude }).eq('id', editingId)
       if (editingTaxId) await supabase.from('house_taxes').update({ name: vName.trim() }).eq('id', editingTaxId)
       clearForm()
     } else {
@@ -106,15 +108,15 @@ export default function PiggyBank({ piggy = 'casa', expenses, incomes = [], fixe
         const { data } = await supabase.from('house_taxes').insert({ year, name: vName.trim(), piggy }).select().single()
         taxId = data?.id
       }
-      if (taxId) await supabase.from('tax_payments').insert({ tax_id: taxId, month: Number(vMonth), amount: num(vAmount), note: vNote || null })
-      setVAmount(''); setVNote('')
+      if (taxId) await supabase.from('tax_payments').insert({ tax_id: taxId, month: Number(vMonth), amount: num(vAmount), note: vNote || null, exclude_monthly: vExclude })
+      setVAmount(''); setVNote(''); setVExclude(false)
     }
     reload()
   }
   const editPayment = (p) => {
     const item = items.find((i) => i.id === p.tax_id)
     setVName(item?.name || ''); setVMonth(String(p.month)); setVAmount(String(p.amount)); setVNote(p.note || '')
-    setEditingId(p.id); setEditingTaxId(p.tax_id)
+    setVExclude(!!p.exclude_monthly); setEditingId(p.id); setEditingTaxId(p.tax_id)
     document.getElementById('venc-form')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }
   const delPayment = async (p) => {
@@ -190,7 +192,7 @@ export default function PiggyBank({ piggy = 'casa', expenses, incomes = [], fixe
         <div className="box">
           <div className="label">Reserva mensal (fixos)</div>
           <div className="value" style={{ fontSize: 22 }}>{money(monthlyReserve)}</div>
-          <div className="meta" style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>{money(anualTotal)} no ano ÷ 12</div>
+          <div className="meta" style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>{money(reserveBase)} no ano ÷ 12</div>
         </div>
       </div>
 
@@ -278,6 +280,10 @@ export default function PiggyBank({ piggy = 'casa', expenses, incomes = [], fixe
           </div>
           <div className="field"><label>Descrição (opcional)</label>
             <input value={vNote} onChange={(e) => setVNote(e.target.value)} placeholder="dica que aparece ao passar no valor" /></div>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, marginBottom: 12 }}>
+            <input type="checkbox" checked={vExclude} onChange={(e) => setVExclude(e.target.checked)} />
+            Ignorar do cálculo mensal (não entra na reserva ÷ 12)
+          </label>
           <div style={{ display: 'flex', gap: 8 }}>
             <button className="btn btn-ghost" style={{ flex: 1 }}>{editingId ? 'Salvar alteração' : 'Adicionar vencimento'}</button>
             {editingId && <button type="button" className="btn btn-ghost" style={{ flex: 0, padding: '13px 16px' }} onClick={clearForm}>Cancelar</button>}
@@ -296,7 +302,9 @@ export default function PiggyBank({ piggy = 'casa', expenses, incomes = [], fixe
                   {Object.values(payMap[it.id] || {}).sort((a, b) => a.month - b.month).map((p) => (
                     <div className="item" key={p.id} style={{ padding: '8px 0' }}>
                       <div>
-                        <div className="desc">{MESES[p.month - 1]} — {money(p.amount)}</div>
+                        <div className="desc">{MESES[p.month - 1]} — {money(p.amount)}
+                          {p.exclude_monthly && <span className="tag" style={{ marginLeft: 6, background: '#e2e8f0', color: '#475569' }}>fora do cálculo</span>}
+                        </div>
                         {p.note && <div className="meta">{p.note}</div>}
                       </div>
                       <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
