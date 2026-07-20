@@ -187,6 +187,8 @@ export default function ImportStatement({ categories, accounts, expenses, income
   const doImport = async () => {
     const sel = rows.filter((r) => r.include && r.type !== 'ignorar')
     if (!sel.length) { setMsg('Nada selecionado para importar.'); return }
+    const semCat = sel.filter((r) => r.type === 'gasto' && !r.categoryId)
+    if (semCat.length) { setMsg(`Defina a categoria dos gastos selecionados (${semCat.length} sem categoria).`); return }
     setBusy(true)
     const exp = [], inc = []
     for (const r of sel) {
@@ -212,6 +214,7 @@ export default function ImportStatement({ categories, accounts, expenses, income
 
   const TYPES = ['gasto', 'entrada', 'reserva', 'ignorar']
   const nInc = rows.filter((r) => r.include && r.type !== 'ignorar').length
+  const needCat = rows.some((r) => r.include && r.type === 'gasto' && !r.categoryId)
   const saidas = rows.filter((r) => r.amount < 0)
   const entradas = rows.filter((r) => r.amount >= 0)
 
@@ -233,7 +236,7 @@ export default function ImportStatement({ categories, accounts, expenses, income
             </select>
             {r.type === 'gasto' && (
               <select value={r.categoryId} onChange={(e) => upd(r.id, { categoryId: e.target.value })}
-                style={{ fontSize: 12, border: '1px solid var(--border)', borderRadius: 6, padding: '1px 4px' }}>
+                style={{ fontSize: 12, border: `1px solid ${r.include && !r.categoryId ? 'var(--danger)' : 'var(--border)'}`, borderRadius: 6, padding: '1px 4px' }}>
                 <option value="">categoria…</option>
                 {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
@@ -310,9 +313,10 @@ export default function ImportStatement({ categories, accounts, expenses, income
             </div>
           </div>
           {!account && <div className="msg err" style={{ marginTop: 10 }}>Selecione a conta (no topo da tela) antes de importar.</div>}
+          {needCat && <div className="msg err" style={{ marginTop: 10 }}>Há gastos selecionados sem categoria — defina a categoria deles.</div>}
           <div className="modal-actions">
             <button className="btn btn-ghost" onClick={() => setRows([])}>Cancelar</button>
-            <button className="btn" disabled={busy || !nInc || !account} onClick={doImport}>
+            <button className="btn" disabled={busy || !nInc || !account || needCat} onClick={doImport}>
               {busy ? 'Importando…' : `Importar ${nInc}`}
             </button>
           </div>
