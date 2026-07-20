@@ -124,7 +124,7 @@ export default function ImportStatement({ categories, accounts, expenses, income
     }
     const hi = data.findIndex((r) => {
       const low = r.map((c) => String(c).toLowerCase())
-      const bbva = low.some((h) => h.includes('importo')) && low.some((h) => h.includes('causale'))
+      const bbva = low.some((h) => h.includes('importo')) && (low.some((h) => h.includes('causale')) || low.some((h) => h.includes('parola chiave')))
       const ing = low.some((h) => h.includes('uscite')) && low.some((h) => h.includes('entrate'))
       return bbva || ing
     })
@@ -156,8 +156,9 @@ export default function ImportStatement({ categories, accounts, expenses, income
       } else {
         amount = parseImporto(row[col('importo')])
         date = toISO((row[col('data valuta')] !== '' ? row[col('data valuta')] : row[col('data')]))
-        merchant = cleanBBVA(row[col('causale')])
-        text = `${row[col('causale')]} ${row[col('movimento')]}`
+        const mCol = col('causale') >= 0 ? col('causale') : col('parola chiave')
+        merchant = cleanBBVA(row[mCol])
+        text = `${row[mCol]} ${row[col('movimento')]}`
       }
       if (!amount || !date) continue
       const type = classify(text, amount)
