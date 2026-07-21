@@ -9,7 +9,7 @@ import PiggyBank from './components/PiggyBank'
 import ImportStatement from './components/ImportStatement'
 import Settings from './components/Settings'
 import Graficos from './components/Graficos'
-import { monthKey } from './lib/helpers'
+import { monthKey, periodKey } from './lib/helpers'
 import { IconMenu, IconClose, IconLogout, IconChart, IconReceipt, IconIncome, IconTarget, IconHome, IconGem, IconImport, IconGear, IconPie } from './components/icons'
 
 const TABS = [
@@ -101,11 +101,11 @@ export default function App() {
   if (loading) return <div className="login-wrap"><div className="empty">Carregando…</div></div>
   if (!session) return <Login />
 
-  const monthExpenses = expenses.filter((x) => (x.date || '').startsWith(month))
+  const monthExpenses = expenses.filter((x) => periodKey(x.date) === month)
 
   const shared = {
     categories, expenses, monthExpenses, recurring, goals,
-    accounts, incomes, balances, fixedExpenses, houseTaxes, piggyYear, taxPayments, month, reload: loadAll,
+    accounts, incomes, balances, fixedExpenses, houseTaxes, piggyYear, taxPayments, month, setMonth, reload: loadAll,
   }
 
   return (

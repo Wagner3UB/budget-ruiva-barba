@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis } from 'recharts'
-import { money, monthLabel, PALETTE, counted } from '../lib/helpers'
+import { money, monthLabel, PALETTE, counted, periodKey } from '../lib/helpers'
 import KpiSummary from './KpiSummary'
 
 function shiftMonth(key, delta) {
@@ -34,7 +34,7 @@ export default function Dashboard(props) {
     for (let i = 5; i >= 0; i--) {
       const k = shiftMonth(month, -i)
       const tot = expenses
-        .filter((e) => (e.date || '').startsWith(k) && counted(e))
+        .filter((e) => periodKey(e.date) === k && counted(e))
         .reduce((s, e) => s + Number(e.amount), 0)
       arr.push({ mes: monthLabel(k), total: Math.round(tot) })
     }

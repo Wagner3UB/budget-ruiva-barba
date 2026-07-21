@@ -1,14 +1,14 @@
 import { useMemo, useRef, useState } from 'react'
 import { supabase } from '../supabaseClient'
 import { IconEdit, IconTrash, IconGear, IconInfo } from './icons'
-import { money, todayISO, monthKey, daysInMonth, fixedActiveIn, PALETTE, parseAmount, fmtDate } from '../lib/helpers'
+import { money, todayISO, monthKey, daysInMonth, fixedActiveIn, PALETTE, parseAmount, fmtDate, monthLabel, shiftMonth, CYCLE_START } from '../lib/helpers'
 import KpiSummary from './KpiSummary'
 
 const PAY = ['Não', 'Sim', 'Não contabilizado']
 const WHO = ['Gui', 'Nathi', 'Casal']
 
 export default function Expenses(props) {
-  const { categories, monthExpenses, accounts, fixedExpenses, month, reload } = props
+  const { categories, monthExpenses, accounts, fixedExpenses, month, setMonth, reload } = props
   const catById = useMemo(
     () => Object.fromEntries(categories.map((c) => [c.id, c])), [categories])
 
@@ -72,9 +72,14 @@ export default function Expenses(props) {
     .sort((a, b) => (a.day_of_month || 1) - (b.day_of_month || 1))
 
   const markPaid = async (f) => {
-    const day = Math.min(f.day_of_month || 1, daysInMonth(month))
+    let day = f.day_of_month || 1
+    const [yy, mm] = month.split('-').map(Number)
+    let dy = yy, dm = mm
+    if (day < CYCLE_START) { dm = mm + 1; if (dm > 12) { dm = 1; dy = yy + 1 } }
+    const mk = `${dy}-${String(dm).padStart(2, '0')}`
+    day = Math.min(day, daysInMonth(mk))
     await supabase.from('expenses').insert({
-      date: `${month}-${String(day).padStart(2, '0')}`,
+      date: `${mk}-${String(day).padStart(2, '0')}`,
       category_id: f.category_id,
       description: f.description || catById[f.category_id]?.name || '',
       place: f.description || '',
@@ -176,6 +181,11 @@ export default function Expenses(props) {
   return (
     <>
       {pop && (<div className="note-pop" style={{ left: pop.x, top: pop.y }}>{pop.text}</div>)}
+      <div className="month-nav">
+        <button onClick={() => setMonth(shiftMonth(month, -1))}>‹</button>
+        <span className="label">{monthLabel(month)}</span>
+        <button onClick={() => setMonth(shiftMonth(month, 1))}>›</button>
+      </div>
       <KpiSummary {...props} />
       {/* ---------- FIXOS DO MES ---------- */}
       <div className="card">

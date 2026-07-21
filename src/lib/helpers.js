@@ -5,10 +5,22 @@ export const EUR = new Intl.NumberFormat('de-DE', {
 
 export const money = (v) => EUR.format(Number(v) || 0)
 
-export const monthKey = (date) => {
-  const d = date ? new Date(date) : new Date()
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+export const CYCLE_START = 10
+export function periodKey(dateISO) {
+  if (!dateISO) return ''
+  const parts = String(dateISO).slice(0, 10).split('-').map(Number)
+  const y = parts[0], m = parts[1], d = parts[2]
+  if (!y || !m) return String(dateISO).slice(0, 7)
+  if (d >= CYCLE_START) return `${y}-${String(m).padStart(2, '0')}`
+  let py = y, pm = m - 1
+  if (pm === 0) { pm = 12; py = y - 1 }
+  return `${py}-${String(pm).padStart(2, '0')}`
 }
+export const inPeriod = (dateISO, key) => periodKey(dateISO) === key
+export const shiftMonth = (key, delta) => { const [y, m] = key.split('-').map(Number); const d = new Date(y, m - 1 + delta, 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` }
+
+
+export const monthKey = () => periodKey(new Date().toISOString().slice(0, 10))
 
 export const monthLabel = (key) => {
   const [y, m] = key.split('-')
@@ -42,10 +54,10 @@ export const fixedActiveIn = (f, month) =>
 export function disponivelOf(person, { incomes = [], expenses = [], balances = [] }, month) {
   const opening = Number(balances.find((b) => b.person === person)?.opening || 0)
   const inc = incomes
-    .filter((i) => i.person === person && (!month || i.month === month))
+    .filter((i) => i.person === person && (!month || i.month <= month))
     .reduce((s, i) => s + Number(i.amount), 0)
   const out = expenses
-    .filter((e) => e.paid_by === person && counted(e) && (!month || (e.date || '').slice(0, 7) === month))
+    .filter((e) => e.paid_by === person && counted(e) && (!month || periodKey(e.date) <= month))
     .reduce((s, e) => s + Number(e.amount), 0)
   return opening + inc - out
 }

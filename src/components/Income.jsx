@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react'
 import { supabase } from '../supabaseClient'
 import { IconTrash } from './icons'
-import { money, todayISO, counted, parseAmount, fmtDate, disponivelOf } from '../lib/helpers'
+import { money, todayISO, counted, parseAmount, fmtDate, disponivelOf, periodKey, monthLabel, shiftMonth } from '../lib/helpers'
 
 const PEOPLE = ['Gui', 'Nathi']
 
-export default function Income({ incomes, expenses, month, balances, reload }) {
+export default function Income({ incomes, expenses, month, setMonth, balances, reload }) {
   const [person, setPerson] = useState('Gui')
   const [date, setDate] = useState(todayISO())
   const [desc, setDesc] = useState('')
@@ -23,10 +23,10 @@ export default function Income({ incomes, expenses, month, balances, reload }) {
     incomes.filter((i) => i.month === month && i.person === p)
       .reduce((s, i) => s + Number(i.amount), 0)
   const monthOut = (p) =>
-    expenses.filter((e) => (e.date || '').startsWith(month) && e.paid_by === p && counted(e))
+    expenses.filter((e) => periodKey(e.date) === month && e.paid_by === p && counted(e))
       .reduce((s, e) => s + Number(e.amount), 0)
   const cumIn = (p) => incomes.filter((i) => i.person === p && i.month <= month).reduce((s, i) => s + Number(i.amount), 0)
-  const cumOut = (p) => expenses.filter((e) => e.paid_by === p && counted(e) && (e.date || '').slice(0, 7) <= month).reduce((s, e) => s + Number(e.amount), 0)
+  const cumOut = (p) => expenses.filter((e) => e.paid_by === p && counted(e) && periodKey(e.date) <= month).reduce((s, e) => s + Number(e.amount), 0)
 
   // Disponivel = saldo inicial + soma(entradas - saidas) de TODOS os meses ate o mes atual (inclusive)
   const disponivel = (p) => disponivelOf(p, { incomes, expenses, balances }, month)
@@ -40,7 +40,7 @@ export default function Income({ incomes, expenses, month, balances, reload }) {
     if (!amount) return
     setBusy(true)
     await supabase.from('incomes').insert({
-      month: date.slice(0, 7), date, person,
+      month: periodKey(date), date, person,
       description: desc || 'Entrada', amount: num(amount),
     })
     setDesc(''); setAmount(''); setBusy(false); reload()
@@ -57,6 +57,11 @@ export default function Income({ incomes, expenses, month, balances, reload }) {
 
   return (
     <>
+      <div className="month-nav">
+        <button onClick={() => setMonth(shiftMonth(month, -1))}>‹</button>
+        <span className="label">{monthLabel(month)}</span>
+        <button onClick={() => setMonth(shiftMonth(month, 1))}>›</button>
+      </div>
       <div className="summary" style={{ marginBottom: 16 }}>
         {PEOPLE.map((p) => {
           const d = disponivel(p)
@@ -67,7 +72,10 @@ export default function Income({ incomes, expenses, month, balances, reload }) {
                 {money(d)}
               </div>
               <div className="meta" style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>
-                inicial {money(openingOf(p))} + entradas {money(monthIncome(p))} − saídas {money(monthOut(p))}
+                inicial {money(openingOf(p))} + entradas {money(cumIn(p))} − saídas {money(cumOut(p))}
+              </div>
+              <div className="meta" style={{ fontSize: 11, color: 'var(--muted)' }}>
+                (mês: +{money(monthIncome(p))} · −{money(monthOut(p))})
               </div>
             </div>
           )

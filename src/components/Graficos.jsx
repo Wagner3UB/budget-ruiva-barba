@@ -3,7 +3,7 @@ import {
   ResponsiveContainer, ComposedChart, BarChart, LineChart, AreaChart, PieChart,
   Bar, Line, Area, Pie, Cell, XAxis, YAxis, Tooltip, CartesianGrid, Legend,
 } from 'recharts'
-import { money, monthLabel, counted, PALETTE } from '../lib/helpers'
+import { money, monthLabel, counted, PALETTE, periodKey } from '../lib/helpers'
 
 const shift = (key, d) => {
   const [y, m] = key.split('-').map(Number)
@@ -32,7 +32,7 @@ export default function Graficos(props) {
   // 1) Fluxo de caixa
   const fluxo = useMemo(() => monthsList.map((k) => {
     const ent = incomes.filter((i) => i.month === k && pOk(i.person)).reduce((s, i) => s + Number(i.amount), 0)
-    const sai = expenses.filter((e) => (e.date || '').startsWith(k) && expOk(e)).reduce((s, e) => s + Number(e.amount), 0)
+    const sai = expenses.filter((e) => periodKey(e.date) === k && expOk(e)).reduce((s, e) => s + Number(e.amount), 0)
     return { mes: monthLabel(k), Entradas: Math.round(ent), Saídas: Math.round(sai), Sobra: Math.round(ent - sai) }
   }), [monthsList, incomes, expenses, person, category])
 
@@ -41,7 +41,7 @@ export default function Graficos(props) {
     const [y, mm] = k.split('-').map(Number)
     const bal = (piggy, pers) => {
       const open = Number(piggyYear.find((p) => p.year === y && (p.piggy || 'casa') === piggy)?.opening || 0)
-      const ap = expenses.filter((e) => (e.to_reserve || e.piggy_deposit) && e.paid_by === pers && Number((e.date || '').slice(0, 4)) === y && (e.date || '').slice(0, 7) <= k).reduce((s, e) => s + Number(e.amount), 0)
+      const ap = expenses.filter((e) => (e.to_reserve || e.piggy_deposit) && e.paid_by === pers && Number((e.date || '').slice(0, 4)) === y && periodKey(e.date) <= k).reduce((s, e) => s + Number(e.amount), 0)
       const ids = new Set(houseTaxes.filter((t) => t.year === y && (t.piggy || 'casa') === piggy).map((t) => t.id))
       const paid = taxPayments.filter((t) => ids.has(t.tax_id) && t.paid && t.month <= mm).reduce((s, t) => s + Number(t.amount), 0)
       return Math.round(open + ap - paid)
@@ -52,7 +52,7 @@ export default function Graficos(props) {
   // 3) Orçado x realizado (mês selecionado)
   const orcado = useMemo(() => {
     const real = {}
-    for (const e of expenses) if ((e.date || '').startsWith(month) && counted(e) && pOk(e.paid_by)) real[e.category_id] = (real[e.category_id] || 0) + Number(e.amount)
+    for (const e of expenses) if (periodKey(e.date) === month && counted(e) && pOk(e.paid_by)) real[e.category_id] = (real[e.category_id] || 0) + Number(e.amount)
     return categories.map((c) => ({ nome: c.name, Orçado: Math.round(Number(c.ideal || 0)), Realizado: Math.round(real[c.id] || 0) }))
       .filter((r) => r.Orçado > 0 || r.Realizado > 0)
       .sort((a, b) => b.Realizado - a.Realizado).slice(0, 10)
@@ -61,7 +61,7 @@ export default function Graficos(props) {
   // 4) Fixos x variáveis (mês)
   const fixVar = useMemo(() => {
     let fx = 0, vr = 0
-    for (const e of expenses) if ((e.date || '').startsWith(month) && expOk(e)) {
+    for (const e of expenses) if (periodKey(e.date) === month && expOk(e)) {
       if (e.fixed_id || e.piggy_deposit) fx += Number(e.amount); else vr += Number(e.amount)
     }
     return [{ name: 'Fixos', value: Math.round(fx) }, { name: 'Variáveis', value: Math.round(vr) }]
@@ -70,7 +70,7 @@ export default function Graficos(props) {
   // 5) Top categorias (mês)
   const top = useMemo(() => {
     const m = {}
-    for (const e of expenses) if ((e.date || '').startsWith(month) && counted(e) && pOk(e.paid_by)) m[e.category_id] = (m[e.category_id] || 0) + Number(e.amount)
+    for (const e of expenses) if (periodKey(e.date) === month && counted(e) && pOk(e.paid_by)) m[e.category_id] = (m[e.category_id] || 0) + Number(e.amount)
     return Object.entries(m).map(([id, v]) => ({ nome: catById[id]?.name || '—', valor: Math.round(v), color: catById[id]?.color }))
       .sort((a, b) => b.valor - a.valor).slice(0, 8)
   }, [expenses, month, person, catById])
