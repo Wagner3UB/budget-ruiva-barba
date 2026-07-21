@@ -159,6 +159,15 @@ export default function Expenses(props) {
   const shownTotal = variableExpenses
     .filter((e) => (e.pay_status ?? 'Não') !== 'Não contabilizado')
     .reduce((s, e) => s + Number(e.amount), 0)
+  const monthFixedFiltered = monthFixed.filter((f) =>
+    (!fPerson || f.paid_by === fPerson) &&
+    (!fAccount || (f.account || '') === fAccount) &&
+    (!fCategory || f.category_id === fCategory))
+  const fixosTotal = monthFixedFiltered.reduce((s, f) => {
+    const pr = paidFixedThisMonth[f.id]
+    return s + Number(pr ? pr.amount : f.amount)
+  }, 0)
+  const grandTotal = shownTotal + fixosTotal
   const fixedPaidTotal = Object.values(paidFixedThisMonth).reduce((s, e) => s + Number(e.amount), 0)
   const fixedPendingTotal = monthFixed
     .filter((f) => !paidFixedThisMonth[f.id])
@@ -366,7 +375,8 @@ export default function Expenses(props) {
 
       <div className="card">
         <h2>Gasto total mensal</h2>
-        <div className="value" style={{ fontSize: 24, fontWeight: 700 }}>{money(shownTotal)}</div>
+        <div className="value" style={{ fontSize: 24, fontWeight: 700 }}>{money(grandTotal)}</div>
+        <div className="meta" style={{ marginTop: 4 }}>avulsos {money(shownTotal)} + fixos {money(fixosTotal)}</div>
         {(fPerson || fAccount || fCategory) && (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
             <span style={{ fontSize: 12, color: 'var(--muted)' }}>filtrado:</span>
@@ -375,7 +385,7 @@ export default function Expenses(props) {
             {fCategory && <span className="tag" style={{ background: '#e1f5ee', color: '#0f6e56' }}>{catById[fCategory]?.name}</span>}
           </div>
         )}
-        <div className="meta" style={{ marginTop: 6 }}>{variableExpenses.length} lançamento(s) · não conta "não contabilizado"</div>
+        <div className="meta" style={{ marginTop: 6 }}>{variableExpenses.length} avulso(s) · {monthFixedFiltered.length} fixo(s)</div>
       </div>
     </>
   )
