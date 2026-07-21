@@ -347,7 +347,7 @@ export default function Expenses(props) {
                         <span className="info-i" onMouseEnter={(ev) => showPop(ev, e.place)} onMouseLeave={() => setPop(null)}><IconInfo size={12} /></span>
                       )}
                       <span className="tag" style={{ marginLeft: 6, ...badge.s }}>{badge.t}</span></div>
-                    <div className="meta">{c?.name} · {fmtDate(e.date)} · {e.paid_by}{e.account ? ` · ${e.account}` : ''}</div>
+                    <div className="meta">{c?.name} · {fmtDate(e.date)} · <span style={{ color: e.paid_by === 'Nathi' ? 'rgba(239,68,68,.65)' : e.paid_by === 'Gui' ? 'rgba(16,185,129,.9)' : 'inherit', fontWeight: 600 }}>{e.paid_by}</span>{e.account ? ` · ${e.account}` : ''}</div>
                   </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
