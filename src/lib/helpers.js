@@ -42,10 +42,10 @@ export const fixedActiveIn = (f, month) =>
 export function disponivelOf(person, { incomes = [], expenses = [], balances = [] }, month) {
   const opening = Number(balances.find((b) => b.person === person)?.opening || 0)
   const inc = incomes
-    .filter((i) => i.person === person && (!month || i.month <= month))
+    .filter((i) => i.person === person && (!month || i.month === month))
     .reduce((s, i) => s + Number(i.amount), 0)
   const out = expenses
-    .filter((e) => e.paid_by === person && counted(e) && (!month || (e.date || '').slice(0, 7) <= month))
+    .filter((e) => e.paid_by === person && counted(e) && (!month || (e.date || '').slice(0, 7) === month))
     .reduce((s, e) => s + Number(e.amount), 0)
   return opening + inc - out
 }

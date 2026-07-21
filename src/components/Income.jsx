@@ -67,10 +67,7 @@ export default function Income({ incomes, expenses, month, balances, reload }) {
                 {money(d)}
               </div>
               <div className="meta" style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>
-                inicial {money(openingOf(p))} + entradas {money(cumIn(p))} − saídas {money(cumOut(p))}
-              </div>
-              <div className="meta" style={{ fontSize: 11, color: 'var(--muted)' }}>
-                (mês: +{money(monthIncome(p))} · −{money(monthOut(p))})
+                inicial {money(openingOf(p))} + entradas {money(monthIncome(p))} − saídas {money(monthOut(p))}
               </div>
             </div>
           )
