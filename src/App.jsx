@@ -8,8 +8,9 @@ import Budgets from './components/Budgets'
 import PiggyBank from './components/PiggyBank'
 import ImportStatement from './components/ImportStatement'
 import Settings from './components/Settings'
+import Graficos from './components/Graficos'
 import { monthKey } from './lib/helpers'
-import { IconMenu, IconClose, IconLogout, IconChart, IconReceipt, IconIncome, IconTarget, IconHome, IconGem, IconImport, IconGear } from './components/icons'
+import { IconMenu, IconClose, IconLogout, IconChart, IconReceipt, IconIncome, IconTarget, IconHome, IconGem, IconImport, IconGear, IconPie } from './components/icons'
 
 const TABS = [
   { id: 'resumo', label: 'Resumo', Icon: IconChart },
@@ -18,6 +19,7 @@ const TABS = [
   { id: 'orcamento', label: 'Orçamento', Icon: IconTarget },
   { id: 'cofrinho', label: 'Casa', Icon: IconHome },
   { id: 'nathi', label: 'Nathi', Icon: IconGem },
+  { id: 'graficos', label: 'Gráficos', Icon: IconPie },
   { id: 'importar', label: 'Importar', Icon: IconImport },
 ]
 
@@ -140,6 +142,7 @@ export default function App() {
         {tab === 'orcamento' && <Budgets {...shared} />}
         {tab === 'cofrinho' && <PiggyBank piggy="casa" {...shared} />}
         {tab === 'nathi' && <PiggyBank piggy="nathi" {...shared} />}
+        {tab === 'graficos' && <Graficos {...shared} />}
         {tab === 'importar' && <ImportStatement {...shared} />}
         {tab === 'admin' && <Settings {...shared} />}
       </div>
