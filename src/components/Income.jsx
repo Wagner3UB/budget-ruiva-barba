@@ -25,6 +25,8 @@ export default function Income({ incomes, expenses, month, balances, reload }) {
   const monthOut = (p) =>
     expenses.filter((e) => (e.date || '').startsWith(month) && e.paid_by === p && counted(e))
       .reduce((s, e) => s + Number(e.amount), 0)
+  const cumIn = (p) => incomes.filter((i) => i.person === p && i.month <= month).reduce((s, i) => s + Number(i.amount), 0)
+  const cumOut = (p) => expenses.filter((e) => e.paid_by === p && counted(e) && (e.date || '').slice(0, 7) <= month).reduce((s, e) => s + Number(e.amount), 0)
 
   // Disponivel = saldo inicial + soma(entradas - saidas) de TODOS os meses ate o mes atual (inclusive)
   const disponivel = (p) => disponivelOf(p, { incomes, expenses, balances }, month)
@@ -65,7 +67,10 @@ export default function Income({ incomes, expenses, month, balances, reload }) {
                 {money(d)}
               </div>
               <div className="meta" style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>
-                +{money(monthIncome(p))} entrou · −{money(monthOut(p))} saiu (mês)
+                inicial {money(openingOf(p))} + entradas {money(cumIn(p))} − saídas {money(cumOut(p))}
+              </div>
+              <div className="meta" style={{ fontSize: 11, color: 'var(--muted)' }}>
+                (mês: +{money(monthIncome(p))} · −{money(monthOut(p))})
               </div>
             </div>
           )
