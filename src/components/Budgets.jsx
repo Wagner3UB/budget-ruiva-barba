@@ -10,7 +10,7 @@ export default function Budgets(props) {
 
   const spentByCat = useMemo(() => {
     const m = {}
-    for (const e of monthExpenses) { if (!counted(e)) continue; m[e.category_id] = (m[e.category_id] || 0) + Number(e.amount) }
+    for (const e of monthExpenses) { if (!counted(e) || e.piggy_deposit) continue; m[e.category_id] = (m[e.category_id] || 0) + Number(e.amount) }
     return m
   }, [monthExpenses])
 

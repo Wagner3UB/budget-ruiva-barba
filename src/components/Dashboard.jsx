@@ -14,13 +14,13 @@ export default function Dashboard(props) {
   const catById = useMemo(
     () => Object.fromEntries(categories.map((c) => [c.id, c])), [categories])
 
-  const total = monthExpenses.filter(counted).reduce((s, e) => s + Number(e.amount), 0)
+  const total = monthExpenses.filter((e) => counted(e) && !e.piggy_deposit).reduce((s, e) => s + Number(e.amount), 0)
   const idealTotal = categories.reduce((s, c) => s + Number(c.ideal || 0), 0)
 
   const byCategory = useMemo(() => {
     const m = {}
     for (const e of monthExpenses) {
-      if (!counted(e)) continue
+      if (!counted(e) || e.piggy_deposit) continue
       const c = catById[e.category_id]
       const name = c ? c.name : 'Sem categoria'
       m[name] = m[name] || { name, value: 0, color: c?.color }
@@ -34,7 +34,7 @@ export default function Dashboard(props) {
     for (let i = 5; i >= 0; i--) {
       const k = shiftMonth(month, -i)
       const tot = expenses
-        .filter((e) => periodKey(e.date) === k && counted(e))
+        .filter((e) => periodKey(e.date) === k && counted(e) && !e.piggy_deposit)
         .reduce((s, e) => s + Number(e.amount), 0)
       arr.push({ mes: monthLabel(k), total: Math.round(tot) })
     }
