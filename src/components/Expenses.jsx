@@ -365,9 +365,17 @@ export default function Expenses(props) {
       </div>
 
       <div className="card">
-        <h2>Total filtrado</h2>
+        <h2>Gasto total mensal</h2>
         <div className="value" style={{ fontSize: 24, fontWeight: 700 }}>{money(shownTotal)}</div>
-        <div className="meta" style={{ marginTop: 4 }}>{variableExpenses.length} lançamento(s) · não conta "não contabilizado"</div>
+        {(fPerson || fAccount || fCategory) && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+            <span style={{ fontSize: 12, color: 'var(--muted)' }}>filtrado:</span>
+            {fPerson && <span className="tag" style={{ background: '#e1f5ee', color: '#0f6e56' }}>{fPerson}</span>}
+            {fAccount && <span className="tag" style={{ background: '#e1f5ee', color: '#0f6e56' }}>{fAccount}</span>}
+            {fCategory && <span className="tag" style={{ background: '#e1f5ee', color: '#0f6e56' }}>{catById[fCategory]?.name}</span>}
+          </div>
+        )}
+        <div className="meta" style={{ marginTop: 6 }}>{variableExpenses.length} lançamento(s) · não conta "não contabilizado"</div>
       </div>
     </>
   )
