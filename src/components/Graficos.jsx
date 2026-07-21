@@ -21,7 +21,7 @@ export default function Graficos(props) {
 
   const catById = useMemo(() => Object.fromEntries(categories.map((c) => [c.id, c])), [categories])
   const pOk = (pb) => person === 'Ambos' || pb === person
-  const expOk = (e) => counted(e) && !e.piggy_deposit && pOk(e.paid_by) && (!category || e.category_id === category)
+  const expOk = (e) => counted(e) && !(e.piggy_deposit && e.from_cc === false) && pOk(e.paid_by) && (!category || e.category_id === category)
 
   const monthsList = useMemo(() => {
     const arr = []

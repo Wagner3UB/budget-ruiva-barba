@@ -136,6 +136,7 @@ export default function PiggyBank({ piggy = 'casa', expenses, incomes = [], fixe
   const [depNote, setDepNote] = useState('')
   const [depMsg, setDepMsg] = useState('')
   const [depEditingId, setDepEditingId] = useState(null)
+  const [fromCC, setFromCC] = useState(true)
   const ensureDepositCategory = async () => {
     const found = categories.find((c) => c.name.toLowerCase() === cfg.category.toLowerCase())
     if (found) return found.id
@@ -149,7 +150,7 @@ export default function PiggyBank({ piggy = 'casa', expenses, incomes = [], fixe
     if (!amt) { setDepMsg('Informe um valor.'); return }
     if (depEditingId) {
       const { error } = await supabase.from('expenses').update({
-        date: depDate, amount: amt,
+        date: depDate, amount: amt, from_cc: fromCC,
         description: depNote || 'Depósito reservas', place: depNote || 'Reservas',
       }).eq('id', depEditingId)
       if (error) { setDepMsg('Erro ao salvar: ' + error.message); return }
@@ -159,19 +160,19 @@ export default function PiggyBank({ piggy = 'casa', expenses, incomes = [], fixe
         date: depDate, category_id: catId,
         description: depNote || 'Depósito reservas',
         place: depNote || 'Reservas',
-        amount: amt, paid_by: cfg.depositor, pay_status: 'Sim', piggy_deposit: true, piggy,
+        amount: amt, paid_by: cfg.depositor, pay_status: 'Sim', piggy_deposit: true, piggy, from_cc: fromCC,
       })
       if (error) { setDepMsg('Erro ao salvar: ' + error.message); return }
     }
-    setDepMsg(''); setDepAmount(''); setDepNote(''); setDepEditingId(null); reload()
+    setDepMsg(''); setDepAmount(''); setDepNote(''); setDepEditingId(null); setFromCC(true); reload()
   }
   const editDeposit = (d) => {
     setDepDate(d.date); setDepAmount(String(d.amount))
     setDepNote(d.place && d.place !== 'Reservas' ? d.place : '')
-    setDepEditingId(d.id)
+    setFromCC(d.from_cc !== false); setDepEditingId(d.id)
     document.getElementById('dep-form')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }
-  const cancelDep = () => { setDepAmount(''); setDepNote(''); setDepEditingId(null); setDepMsg('') }
+  const cancelDep = () => { setDepAmount(''); setDepNote(''); setDepEditingId(null); setFromCC(true); setDepMsg('') }
   const delDeposit = async (id) => { await supabase.from('expenses').delete().eq('id', id); reload() }
 
   return (
@@ -374,6 +375,10 @@ export default function PiggyBank({ piggy = 'casa', expenses, incomes = [], fixe
           </div>
           <div className="field"><label>Descrição (opcional)</label>
             <input value={depNote} onChange={(e) => setDepNote(e.target.value)} placeholder="ex: reserva de julho" /></div>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, marginBottom: 12 }}>
+            <input type="checkbox" checked={fromCC} onChange={(e) => setFromCC(e.target.checked)} />
+            Sai da conta corrente (abate do Disponível). Desmarque se for depósito externo.
+          </label>
           {depMsg && <div className="msg err">{depMsg}</div>}
           <div style={{ display: 'flex', gap: 8 }}>
             <button className="btn" style={{ flex: 1 }}>{depEditingId ? 'Salvar alteração' : 'Registrar depósito'}</button>
@@ -385,7 +390,9 @@ export default function PiggyBank({ piggy = 'casa', expenses, incomes = [], fixe
             {deposits.map((d) => (
               <div className="item" key={d.id}>
                 <div>
-                  <div className="desc">{d.place || d.description || 'Depósito'}</div>
+                  <div className="desc">{d.place || d.description || 'Depósito'}
+                    {d.from_cc === false && <span className="tag" style={{ marginLeft: 6, background: '#e2e8f0', color: '#475569' }}>externo</span>}
+                  </div>
                   <div className="meta">{fmtDate(d.date)}</div>
                 </div>
                 <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
