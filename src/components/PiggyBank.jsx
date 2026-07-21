@@ -38,7 +38,8 @@ export default function PiggyBank({ piggy = 'casa', expenses, incomes = [], fixe
   const itemTotal = (id) => Object.values(payMap[id] || {}).reduce((s, p) => s + Number(p.amount), 0)
   const monthTotal = (mo) => payments.filter((p) => p.month === mo).reduce((s, p) => s + Number(p.amount), 0)
   const anualTotal = payments.reduce((s, p) => s + Number(p.amount), 0)
-  const reserveBase = payments.filter((p) => !p.exclude_monthly).reduce((s, p) => s + Number(p.amount), 0)
+  const excludedTax = new Set(items.filter((i) => i.exclude_monthly).map((i) => i.id))
+  const reserveBase = payments.filter((p) => !p.exclude_monthly && !excludedTax.has(p.tax_id)).reduce((s, p) => s + Number(p.amount), 0)
   const monthlyReserve = reserveBase / 12
 
   const opening = Number(piggyYear.find((y) => y.year === year && (y.piggy || 'casa') === piggy)?.opening || 0)
@@ -83,6 +84,9 @@ export default function PiggyBank({ piggy = 'casa', expenses, incomes = [], fixe
   }
   const toggleTransferred = async (p) => {
     await supabase.from('tax_payments').update({ transferred: !p.transferred }).eq('id', p.id); reload()
+  }
+  const toggleTaxExclude = async (it) => {
+    await supabase.from('house_taxes').update({ exclude_monthly: !it.exclude_monthly }).eq('id', it.id); reload()
   }
 
   // adicionar vencimento (cria taxa se nome novo)
@@ -296,7 +300,10 @@ export default function PiggyBank({ piggy = 'casa', expenses, incomes = [], fixe
             {items.map((it) => (
               <div key={it.id} style={{ marginBottom: 10 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <b>{it.name}</b>
+                  <b>{it.name}{it.exclude_monthly && <span className="tag" style={{ marginLeft: 6, background: '#e2e8f0', color: '#475569' }}>fora do cálculo</span>}</b>
+                  <button className="btn btn-sm btn-ghost" onClick={() => toggleTaxExclude(it)}>
+                    {it.exclude_monthly ? 'incluir no cálculo' : 'fora do cálculo'}
+                  </button>
                 </div>
                 <div style={{ marginTop: 4 }}>
                   {Object.values(payMap[it.id] || {}).sort((a, b) => a.month - b.month).map((p) => (
