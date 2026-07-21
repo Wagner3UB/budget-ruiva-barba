@@ -57,7 +57,7 @@ export function disponivelOf(person, { incomes = [], expenses = [], balances = [
     .filter((i) => i.person === person && (!month || i.month <= month))
     .reduce((s, i) => s + Number(i.amount), 0)
   const out = expenses
-    .filter((e) => e.paid_by === person && counted(e) && (!month || periodKey(e.date) <= month))
+    .filter((e) => e.paid_by === person && counted(e) && !e.piggy_deposit && (!month || periodKey(e.date) <= month))
     .reduce((s, e) => s + Number(e.amount), 0)
   return opening + inc - out
 }

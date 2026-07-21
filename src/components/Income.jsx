@@ -23,10 +23,10 @@ export default function Income({ incomes, expenses, month, setMonth, balances, r
     incomes.filter((i) => i.month === month && i.person === p)
       .reduce((s, i) => s + Number(i.amount), 0)
   const monthOut = (p) =>
-    expenses.filter((e) => periodKey(e.date) === month && e.paid_by === p && counted(e))
+    expenses.filter((e) => periodKey(e.date) === month && e.paid_by === p && counted(e) && !e.piggy_deposit)
       .reduce((s, e) => s + Number(e.amount), 0)
   const cumIn = (p) => incomes.filter((i) => i.person === p && i.month <= month).reduce((s, i) => s + Number(i.amount), 0)
-  const cumOut = (p) => expenses.filter((e) => e.paid_by === p && counted(e) && periodKey(e.date) <= month).reduce((s, e) => s + Number(e.amount), 0)
+  const cumOut = (p) => expenses.filter((e) => e.paid_by === p && counted(e) && !e.piggy_deposit && periodKey(e.date) <= month).reduce((s, e) => s + Number(e.amount), 0)
 
   // Disponivel = saldo inicial + soma(entradas - saidas) de TODOS os meses ate o mes atual (inclusive)
   const disponivel = (p) => disponivelOf(p, { incomes, expenses, balances }, month)
