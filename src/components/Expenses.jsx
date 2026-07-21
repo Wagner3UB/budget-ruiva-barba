@@ -156,6 +156,9 @@ export default function Expenses(props) {
     if (sortBy === 'az') return nameOf(a).localeCompare(nameOf(b))
     return (b.date || '').localeCompare(a.date || '')
   })
+  const shownTotal = variableExpenses
+    .filter((e) => (e.pay_status ?? 'Não') !== 'Não contabilizado')
+    .reduce((s, e) => s + Number(e.amount), 0)
   const fixedPaidTotal = Object.values(paidFixedThisMonth).reduce((s, e) => s + Number(e.amount), 0)
   const fixedPendingTotal = monthFixed
     .filter((f) => !paidFixedThisMonth[f.id])
@@ -359,6 +362,12 @@ export default function Expenses(props) {
             )
           })
         )}
+      </div>
+
+      <div className="card">
+        <h2>Total filtrado</h2>
+        <div className="value" style={{ fontSize: 24, fontWeight: 700 }}>{money(shownTotal)}</div>
+        <div className="meta" style={{ marginTop: 4 }}>{variableExpenses.length} lançamento(s) · não conta "não contabilizado"</div>
       </div>
     </>
   )
