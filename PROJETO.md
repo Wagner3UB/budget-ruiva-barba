@@ -100,6 +100,10 @@ acumulada e, embaixo, o movimento só do mês.
 ### Pago? (pay_status)
 'Sim' (pago), 'Não' (a pagar), 'Não contabilizado' (não entra em nenhuma soma).
 
+OBS Disponível: depósitos de reserva (piggy_deposit) NÃO reduzem o Disponível (são
+transferência pra poupança, não gasto) — consistente com o Resumo. Gasto marcado
+'→ poupança' (to_reserve) com categoria real AINDA reduz o Disponível.
+
 ### Gasto fixo (fixed_expenses)
 Modelo recorrente mensal. Aparece todo mês na seção "Fixos do mês" como "a pagar"
 (indicativo, não soma). Ao "marcar pago" cria uma expense (fixed_id, pay_status Sim,
@@ -118,7 +122,7 @@ e Nathi (dona Nathi).
 - **Aportes** = depósitos manuais (expenses.piggy_deposit) + gastos to_reserve pagos +
   fixos to_reserve pagos, todos por paid_by = dono do cofrinho, no ano.
 - **Depósito manual** ("Registrar depósito nas reservas"): cria expense piggy_deposit,
-  paid_by dono, categoria "Fixos Gui"/"Taxas Nathi". Reduz o Disponível do dono.
+  paid_by dono, categoria "Fixos Gui"/"Taxas Nathi". NÃO reduz o Disponível do dono (é transferência pra poupança, não gasto).
 - **Depósito NÃO conta como gasto** no Resumo (pizza/gasto do mês) nem no Orçamento.
 - **Taxas anuais** (house_taxes + tax_payments): "Calendário de vencimentos {ano}"
   — matriz taxa × meses (jan..dez), com Soma por mês e total. Cada vencimento: mês,
