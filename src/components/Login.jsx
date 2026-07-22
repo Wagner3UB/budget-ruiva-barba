@@ -19,7 +19,7 @@ export default function Login() {
     <div className="login-wrap">
       <div className="login-card">
         <div className="logo">💶</div>
-        <h1>Gastos do Casal</h1>
+        <h1>Ruiva &amp; Barba Financials</h1>
         <p className="tagline">Entre com seu e-mail e senha</p>
         {err && <div className="msg err">{err}</div>}
         <form onSubmit={submit}>
