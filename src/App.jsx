@@ -112,9 +112,12 @@ export default function App() {
     <div className="app">
       <header className="appheader">
       <div className="topbar">
-        <div>
-          <h1>Ruiva &amp; Barba Financials</h1>
-          <div className="sub">{session.user.email}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+          <div className="logo-mark">R&amp;B</div>
+          <div style={{ minWidth: 0 }}>
+            <h1>Ruiva &amp; Barba Financials</h1>
+            <div className="sub">{session.user.email}</div>
+          </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <button className="hicon nav-burger" title="menu" onClick={() => setMenuOpen((o) => !o)}>
