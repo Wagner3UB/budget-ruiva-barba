@@ -75,9 +75,9 @@ export default function Dashboard(props) {
               <ResponsiveContainer>
                 <PieChart>
                   <Pie data={byCategory} dataKey="value" nameKey="name" innerRadius={55} outerRadius={95} paddingAngle={2}>
-                    {byCategory.map((d, i) => { const col = d.color || PALETTE[i % PALETTE.length]; return (
-                      <Cell key={i} fill={dark ? 'transparent' : col} stroke={col} strokeWidth={dark ? 2 : 1} />
-                    ) })}
+                    {byCategory.map((d, i) => (
+                      <Cell key={i} fill={d.color || PALETTE[i % PALETTE.length]} />
+                    ))}
                   </Pie>
                   <Tooltip formatter={(v) => money(v)} />
                 </PieChart>
@@ -106,7 +106,7 @@ export default function Dashboard(props) {
               <XAxis dataKey="mes" fontSize={12} />
               <YAxis fontSize={11} width={44} />
               <Tooltip formatter={(v) => money(v)} />
-              <Bar dataKey="total" fill={dark ? 'transparent' : '#0f766e'} stroke="#0f766e" strokeWidth={dark ? 2 : 0} radius={[6, 6, 0, 0]} />
+              <Bar dataKey="total" fill="#0f766e" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
