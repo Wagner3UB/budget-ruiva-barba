@@ -187,6 +187,44 @@ export default function Expenses(props) {
         <button onClick={() => setMonth(shiftMonth(month, 1))}>›</button>
       </div>
       <KpiSummary {...props} />
+      {/* ---------- NOVO GASTO AVULSO ---------- */}
+      <div className="card">
+        <h2>{editingExpId ? 'Editar gasto' : 'Novo gasto (avulso)'}</h2>
+        <form id="gasto-form" onSubmit={addExpense}>
+          <div className="row">
+            <div className="field"><label>Data</label>
+              <input type="date" value={date} onChange={(e) => setDate(e.target.value)} required /></div>
+            <div className="field"><label>Valor (€)</label>
+              <input ref={amountRef} inputMode="decimal" value={amount} placeholder="0,00" onChange={(e) => setAmount(e.target.value)} required /></div>
+          </div>
+          <div className="field"><label>Categoria</label>
+            <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} required>
+              <option value="">Selecione…</option>
+              {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select></div>
+          <div className="row">
+            <div className="field"><label>Quem pagou</label>
+              <select value={paidBy} onChange={(e) => setPaidBy(e.target.value)}>{WHO.map((w) => <option key={w}>{w}</option>)}</select></div>
+            <div className="field"><label>Conta / Banco</label>
+              <select value={account} onChange={(e) => setAccount(e.target.value)}>
+                <option value="">—</option>{accounts.map((a) => <option key={a.id} value={a.name}>{a.name}</option>)}</select></div>
+          </div>
+          <div className="field"><label>Descrição</label>
+            <input value={place} onChange={(e) => setPlace(e.target.value)} placeholder="ex: Penny, Amazon…" /></div>
+          <div className="field"><label>Pago?</label>
+            <select value={payStatus} onChange={(e) => setPayStatus(e.target.value)}>{PAY.map((p) => <option key={p}>{p}</option>)}</select></div>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, marginBottom: 12 }}>
+            <input type="checkbox" checked={toReserve} onChange={(e) => setToReserve(e.target.checked)} />
+            Enviar à poupança (vai para as reservas de quem pagou)
+          </label>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className="btn" style={{ flex: 1 }} disabled={busy}>{busy ? 'Salvando…' : editingExpId ? 'Salvar alteração' : 'Adicionar gasto'}</button>
+            {editingExpId && <button type="button" className="btn btn-ghost" style={{ flex: 0, padding: '13px 16px' }} onClick={cancelExpEdit}>Cancelar</button>}
+          </div>
+          {flash && <div className="msg ok" style={{ marginTop: 10 }}>{flash}</div>}
+        </form>
+      </div>
+
       {/* ---------- FIXOS DO MES ---------- */}
       <div className="card">
         <h2 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -286,44 +324,6 @@ export default function Expenses(props) {
             <button className="btn btn-ghost">Adicionar gasto fixo</button>
           </form>
         )}
-      </div>
-
-      {/* ---------- NOVO GASTO AVULSO ---------- */}
-      <div className="card">
-        <h2>{editingExpId ? 'Editar gasto' : 'Novo gasto (avulso)'}</h2>
-        <form id="gasto-form" onSubmit={addExpense}>
-          <div className="row">
-            <div className="field"><label>Data</label>
-              <input type="date" value={date} onChange={(e) => setDate(e.target.value)} required /></div>
-            <div className="field"><label>Valor (€)</label>
-              <input ref={amountRef} inputMode="decimal" value={amount} placeholder="0,00" onChange={(e) => setAmount(e.target.value)} required /></div>
-          </div>
-          <div className="field"><label>Categoria</label>
-            <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} required>
-              <option value="">Selecione…</option>
-              {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select></div>
-          <div className="row">
-            <div className="field"><label>Quem pagou</label>
-              <select value={paidBy} onChange={(e) => setPaidBy(e.target.value)}>{WHO.map((w) => <option key={w}>{w}</option>)}</select></div>
-            <div className="field"><label>Conta / Banco</label>
-              <select value={account} onChange={(e) => setAccount(e.target.value)}>
-                <option value="">—</option>{accounts.map((a) => <option key={a.id} value={a.name}>{a.name}</option>)}</select></div>
-          </div>
-          <div className="field"><label>Descrição</label>
-            <input value={place} onChange={(e) => setPlace(e.target.value)} placeholder="ex: Penny, Amazon…" /></div>
-          <div className="field"><label>Pago?</label>
-            <select value={payStatus} onChange={(e) => setPayStatus(e.target.value)}>{PAY.map((p) => <option key={p}>{p}</option>)}</select></div>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, marginBottom: 12 }}>
-            <input type="checkbox" checked={toReserve} onChange={(e) => setToReserve(e.target.checked)} />
-            Enviar à poupança (vai para as reservas de quem pagou)
-          </label>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button className="btn" style={{ flex: 1 }} disabled={busy}>{busy ? 'Salvando…' : editingExpId ? 'Salvar alteração' : 'Adicionar gasto'}</button>
-            {editingExpId && <button type="button" className="btn btn-ghost" style={{ flex: 0, padding: '13px 16px' }} onClick={cancelExpEdit}>Cancelar</button>}
-          </div>
-          {flash && <div className="msg ok" style={{ marginTop: 10 }}>{flash}</div>}
-        </form>
       </div>
 
       {/* ---------- LISTA DE AVULSOS ---------- */}
