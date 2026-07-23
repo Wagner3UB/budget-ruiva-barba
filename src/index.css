@@ -14,6 +14,7 @@
   --accent-soft: var(--accent-soft);
   --accent-soft-text: #0f6e56;
   --header-bg: #0f766e;
+  --emph-bg: #f0faf6;
   color-scheme: light;
 }
 :root[data-theme="dark"] {
@@ -30,6 +31,7 @@
   --accent-soft: #123a30;
   --accent-soft-text: #6fe0bd;
   --header-bg: #17213a;
+  --emph-bg: #122a22;
   color-scheme: dark;
 }
 
@@ -440,5 +442,6 @@ html, body { overflow-x: hidden; }
 .import-col-scroll .item .meta { margin-top: 3px; }
 
 /* ---- Card em destaque (ação principal: novo gasto) ---- */
-.card.emph { border: 2px solid var(--teal); }
-.card.emph > h2:first-child { color: var(--accent-soft-text); }
+.card.emph { border: 2px solid var(--teal); background: var(--emph-bg); }
+.card.emph > h2:first-child { color: var(--text); }
+.card.emph .field input, .card.emph .field select { border-color: var(--teal); }
