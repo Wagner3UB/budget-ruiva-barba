@@ -10,7 +10,7 @@ import ImportStatement from './components/ImportStatement'
 import Settings from './components/Settings'
 import Graficos from './components/Graficos'
 import { monthKey, periodKey } from './lib/helpers'
-import { IconMenu, IconClose, IconLogout, IconChart, IconReceipt, IconIncome, IconTarget, IconHome, IconGem, IconImport, IconGear, IconPie } from './components/icons'
+import { IconMenu, IconClose, IconLogout, IconSun, IconMoon, IconChart, IconReceipt, IconIncome, IconTarget, IconHome, IconGem, IconImport, IconGear, IconPie } from './components/icons'
 
 const TABS = [
   { id: 'resumo', label: 'Resumo', Icon: IconChart },
@@ -28,6 +28,17 @@ export default function App() {
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState('resumo')
   const [menuOpen, setMenuOpen] = useState(false)
+  const [theme, setTheme] = useState(() => {
+    try {
+      const saved = localStorage.getItem('theme')
+      if (saved) return saved
+    } catch (e) {}
+    return (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light'
+  })
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+    try { localStorage.setItem('theme', theme) } catch (e) {}
+  }, [theme])
   const [month, setMonth] = useState(monthKey())
 
   const [categories, setCategories] = useState([])
@@ -122,6 +133,9 @@ export default function App() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <button className="hicon nav-burger" title="menu" onClick={() => setMenuOpen((o) => !o)}>
             {menuOpen ? <IconClose /> : <IconMenu />}
+          </button>
+          <button className="hicon" title={theme === 'dark' ? 'Tema claro' : 'Tema escuro'} onClick={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}>
+            {theme === 'dark' ? <IconSun /> : <IconMoon />}
           </button>
           <button className={`hicon ${tab === 'admin' ? 'hicon-on' : ''}`} title="Admin" onClick={() => setTab('admin')}><IconGear /></button>
           <button className="hicon" title="Sair" onClick={() => supabase.auth.signOut()}><IconLogout /></button>
