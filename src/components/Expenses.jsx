@@ -188,7 +188,7 @@ export default function Expenses(props) {
       </div>
       <KpiSummary {...props} />
       {/* ---------- NOVO GASTO AVULSO ---------- */}
-      <div className="card">
+      <div className="card emph">
         <h2>{editingExpId ? 'Editar gasto' : 'Novo gasto (avulso)'}</h2>
         <form id="gasto-form" onSubmit={addExpense}>
           <div className="row">

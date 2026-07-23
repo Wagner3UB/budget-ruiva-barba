@@ -438,3 +438,7 @@ html, body { overflow-x: hidden; }
 
 .import-col-scroll .item { padding: 9px 2px; }
 .import-col-scroll .item .meta { margin-top: 3px; }
+
+/* ---- Card em destaque (ação principal: novo gasto) ---- */
+.card.emph { border: 2px solid var(--teal); }
+.card.emph > h2:first-child { color: var(--accent-soft-text); }
