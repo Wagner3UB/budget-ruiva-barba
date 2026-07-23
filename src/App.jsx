@@ -116,7 +116,7 @@ export default function App() {
 
   const shared = {
     categories, expenses, monthExpenses, recurring, goals,
-    accounts, incomes, balances, fixedExpenses, houseTaxes, piggyYear, taxPayments, month, setMonth, reload: loadAll,
+    accounts, incomes, balances, fixedExpenses, houseTaxes, piggyYear, taxPayments, month, setMonth, theme, reload: loadAll,
   }
 
   return (

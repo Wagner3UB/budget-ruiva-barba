@@ -19,6 +19,7 @@ export default function Graficos(props) {
   const [month, setMonth] = useState(props.month || new Date().toISOString().slice(0, 7))
   const [category, setCategory] = useState('')
 
+  const dark = props.theme === 'dark'
   const catById = useMemo(() => Object.fromEntries(categories.map((c) => [c.id, c])), [categories])
   const pOk = (pb) => person === 'Ambos' || pb === person
   const expOk = (e) => counted(e) && !(e.piggy_deposit && e.from_cc === false) && pOk(e.paid_by) && (!category || e.category_id === category)
@@ -114,8 +115,8 @@ export default function Graficos(props) {
               <XAxis dataKey="mes" fontSize={12} /><YAxis fontSize={11} width={48} />
               <Tooltip {...tip} />
               <Legend wrapperStyle={{ fontSize: 12 }} />
-              <Bar dataKey="Entradas" fill={C.entrada} radius={[4, 4, 0, 0]} maxBarSize={22} />
-              <Bar dataKey="Saídas" fill={C.saida} radius={[4, 4, 0, 0]} maxBarSize={22} />
+              <Bar dataKey="Entradas" fill={dark ? 'transparent' : C.entrada} stroke={C.entrada} strokeWidth={dark ? 1.5 : 0} radius={[4, 4, 0, 0]} maxBarSize={22} />
+              <Bar dataKey="Saídas" fill={dark ? 'transparent' : C.saida} stroke={C.saida} strokeWidth={dark ? 1.5 : 0} radius={[4, 4, 0, 0]} maxBarSize={22} />
               <Line dataKey="Sobra" stroke={C.sobra} strokeWidth={2} dot={{ r: 3 }} />
             </ComposedChart>
           </ResponsiveContainer>
@@ -130,8 +131,8 @@ export default function Graficos(props) {
               <CartesianGrid stroke="#eef1f4" vertical={false} />
               <XAxis dataKey="mes" fontSize={12} /><YAxis fontSize={11} width={48} />
               <Tooltip {...tip} /><Legend wrapperStyle={{ fontSize: 12 }} />
-              <Area dataKey="Casa" stroke={C.casa} fill="rgba(27,175,122,.15)" strokeWidth={2} />
-              <Area dataKey="Nathi" stroke={C.nathi} fill="rgba(212,83,126,.14)" strokeWidth={2} />
+              <Area dataKey="Casa" stroke={C.casa} fill={C.casa} fillOpacity={dark ? 0 : 0.15} strokeWidth={2} />
+              <Area dataKey="Nathi" stroke={C.nathi} fill={C.nathi} fillOpacity={dark ? 0 : 0.14} strokeWidth={2} />
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -145,8 +146,8 @@ export default function Graficos(props) {
               <CartesianGrid stroke="#eef1f4" horizontal={false} />
               <XAxis type="number" fontSize={11} /><YAxis type="category" dataKey="nome" width={110} fontSize={12} />
               <Tooltip {...tip} /><Legend wrapperStyle={{ fontSize: 12 }} />
-              <Bar dataKey="Orçado" fill={C.ideal} radius={[0, 4, 4, 0]} maxBarSize={14} />
-              <Bar dataKey="Realizado" fill={C.real} radius={[0, 4, 4, 0]} maxBarSize={14} />
+              <Bar dataKey="Orçado" fill={dark ? 'transparent' : C.ideal} stroke={C.ideal} strokeWidth={dark ? 1.5 : 0} radius={[0, 4, 4, 0]} maxBarSize={14} />
+              <Bar dataKey="Realizado" fill={dark ? 'transparent' : C.real} stroke={C.real} strokeWidth={dark ? 1.5 : 0} radius={[0, 4, 4, 0]} maxBarSize={14} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -160,7 +161,7 @@ export default function Graficos(props) {
               <XAxis type="number" fontSize={11} /><YAxis type="category" dataKey="nome" width={100} fontSize={12} />
               <Tooltip {...tip} />
               <Bar dataKey="valor" radius={[0, 4, 4, 0]} maxBarSize={16}>
-                {top.map((d, i) => <Cell key={i} fill={d.color || PALETTE[i % PALETTE.length]} />)}
+                {top.map((d, i) => { const col = d.color || PALETTE[i % PALETTE.length]; return <Cell key={i} fill={dark ? 'transparent' : col} stroke={col} strokeWidth={dark ? 1.5 : 0} /> })}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
@@ -173,7 +174,7 @@ export default function Graficos(props) {
           <ResponsiveContainer>
             <PieChart>
               <Pie data={fixVar} dataKey="value" nameKey="name" innerRadius={55} outerRadius={90} paddingAngle={2}>
-                <Cell fill={C.fixo} /><Cell fill={C.var} />
+                <Cell fill={dark ? 'transparent' : C.fixo} stroke={C.fixo} strokeWidth={dark ? 2 : 1} /><Cell fill={dark ? 'transparent' : C.var} stroke={C.var} strokeWidth={dark ? 2 : 1} />
               </Pie>
               <Tooltip {...tip} /><Legend wrapperStyle={{ fontSize: 12 }} />
             </PieChart>

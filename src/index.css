@@ -13,13 +13,14 @@
   --soft: var(--soft);
   --accent-soft: var(--accent-soft);
   --accent-soft-text: #0f6e56;
+  --header-bg: #0f766e;
   color-scheme: light;
 }
 :root[data-theme="dark"] {
   --bg: #0b1220;
   --card: #131d31;
   --text: #e6edf5;
-  --muted: #9aa8bd;
+  --muted: #b7c3d6;
   --border: #26324a;
   --danger: #f87171;
   --amber: #fbbf24;
@@ -28,6 +29,7 @@
   --soft: #0f1930;
   --accent-soft: #123a30;
   --accent-soft-text: #6fe0bd;
+  --header-bg: #0e2b25;
   color-scheme: dark;
 }
 
@@ -165,7 +167,7 @@ input, select { font-family: inherit; }
 /* ============ DESKTOP: usa o monitor inteiro ============ */
 @media (min-width: 1024px) {
   .app { max-width: none; padding-left: 28px; padding-right: 28px; padding-bottom: 110px; }
-  .topbar { border-radius: 0 0 14px 14px; }
+  .topbar { border-radius: 0; }
 
   /* cards fluem em várias colunas (masonry) preenchendo a largura */
   .content { column-width: 360px; column-gap: 20px; padding: 20px 0; }
@@ -368,7 +370,7 @@ input, select { font-family: inherit; }
 
 /* ============ Header opção C: subheader branco com ícones ============ */
 .appheader { background: transparent; border-radius: 0; box-shadow: none; overflow: visible; }
-.appheader .topbar { background: var(--teal); padding: 16px 18px; }
+.appheader .topbar { background: var(--header-bg); padding: 16px 18px; }
 .appheader .topnav {
   background: var(--card); border-top: none; border-bottom: 1px solid var(--border);
   padding: 8px 12px; gap: 4px; overflow-x: auto;
