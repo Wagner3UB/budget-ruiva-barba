@@ -15,6 +15,7 @@
   --accent-soft-text: #0f6e56;
   --header-bg: #0f766e;
   --emph-bg: #f0faf6;
+  --nav-hover: #e7edf4;
   color-scheme: light;
 }
 :root[data-theme="dark"] {
@@ -32,6 +33,7 @@
   --accent-soft-text: #6fe0bd;
   --header-bg: #17213a;
   --emph-bg: #122a22;
+  --nav-hover: #212d47;
   color-scheme: dark;
 }
 
@@ -380,9 +382,10 @@ input, select { font-family: inherit; }
 .appheader .topnav button {
   color: var(--muted); padding: 8px 13px; border-radius: 9px; font-size: 14px;
   display: flex; align-items: center; gap: 6px; white-space: nowrap; background: none; border: none; cursor: pointer;
+  transition: background .15s ease, color .15s ease;
 }
 .appheader .topnav button svg { width: 18px; height: 18px; flex-shrink: 0; }
-.appheader .topnav button:hover { background: var(--hover); color: var(--text); }
+.appheader .topnav button:hover { background: var(--nav-hover); color: var(--text); }
 .appheader .topnav button.active { background: var(--accent-soft); color: var(--accent-soft-text); font-weight: 600; }
 
 @media (max-width: 760px) {
