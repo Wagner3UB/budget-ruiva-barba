@@ -4,7 +4,7 @@
 > de verdade. Atualizar sempre que algo mudar.
 
 ## 1. Visão geral
-App web de gestão de gastos de um casal (**Gui** e **Nathi**), morando na **Itália**,
+App **Ruiva & Barba Financials** — gestão de gastos de um casal (**Gui** e **Nathi**), morando na **Itália**,
 moeda **euro (€)**, formato de número europeu (ponto de milhar, vírgula decimal:
 `2.120,36`). Login por senha para as duas pessoas, dados compartilhados na nuvem.
 
@@ -82,6 +82,7 @@ Obs: nunca usar `git push -f` (uma vez achatou o histórico — não repetir).
 - **11** `migracao_11_gasto_reserva.sql`: to_reserve em expenses.
 - **12** `migracao_12_excluir_calculo_mensal.sql`: exclude_monthly em tax_payments.
 - **13** `migracao_13_categoria_fora_calculo.sql`: exclude_monthly em house_taxes.
+- **14** `migracao_14_deposito_externo.sql`: from_cc em expenses (depósito externo vs. da conta corrente).
 
 ## 5. Regras de negócio (decisões)
 ### Ciclo mensal — começa dia 10
@@ -100,9 +101,10 @@ acumulada e, embaixo, o movimento só do mês.
 ### Pago? (pay_status)
 'Sim' (pago), 'Não' (a pagar), 'Não contabilizado' (não entra em nenhuma soma).
 
-OBS Disponível: depósitos de reserva (piggy_deposit) NÃO reduzem o Disponível (são
-transferência pra poupança, não gasto) — consistente com o Resumo. Gasto marcado
-'→ poupança' (to_reserve) com categoria real AINDA reduz o Disponível.
+OBS Disponível: depósito de reserva (piggy_deposit) reduz o Disponível SÓ quando marcado
+'Sai da conta corrente' (from_cc = true, padrão). Se for 'externo' (from_cc = false), NÃO
+mexe no Disponível, mas entra na reserva. Depósitos NUNCA contam como gasto no Resumo/
+Orçamento (não é consumo). Gasto '→ poupança' (to_reserve) com categoria real AINDA reduz o Disponível.
 
 ### Gasto fixo (fixed_expenses)
 Modelo recorrente mensal. Aparece todo mês na seção "Fixos do mês" como "a pagar"
@@ -122,7 +124,8 @@ e Nathi (dona Nathi).
 - **Aportes** = depósitos manuais (expenses.piggy_deposit) + gastos to_reserve pagos +
   fixos to_reserve pagos, todos por paid_by = dono do cofrinho, no ano.
 - **Depósito manual** ("Registrar depósito nas reservas"): cria expense piggy_deposit,
-  paid_by dono, categoria "Fixos Gui"/"Taxas Nathi". NÃO reduz o Disponível do dono (é transferência pra poupança, não gasto).
+  paid_by dono, categoria "Fixos Gui"/"Taxas Nathi". Tem checkbox "Sai da conta corrente"
+  (padrão marcado → abate do Disponível; desmarcado = externo → não abate). Selo "externo" na lista.
 - **Depósito NÃO conta como gasto** no Resumo (pizza/gasto do mês) nem no Orçamento.
 - **Taxas anuais** (house_taxes + tax_payments): "Calendário de vencimentos {ano}"
   — matriz taxa × meses (jan..dez), com Soma por mês e total. Cada vencimento: mês,
@@ -201,3 +204,23 @@ Lógica:
 - Trocar a pizza do Resumo por barras horizontais ranqueadas.
 - Modo de divisão de gastos entre o casal (quem deve quanto a quem) — nunca implementado.
 - Considerar excluir também gastos "→ poupança" dos totais de consumo (hoje só o depósito manual é excluído).
+
+
+## 10. Atualizações recentes (UI e tema)
+- **Nome do app:** Ruiva & Barba Financials (header, login, título da aba).
+- **Header (modelo C):** faixa verde no topo com **monograma R&B**, nome, e-mail e botões-ícone
+  (tema, engrenagem/Admin, sair) — todos do mesmo tamanho no mobile; abaixo, subheader branco
+  com a navegação em ícones de linha (aba ativa com preenchimento verde suave). Header 100vw,
+  recuo lateral 2.5vw alinhado ao conteúdo (sem full-bleed/scrollbar). Sem cantos arredondados.
+- **Dark mode:** switch (lua/sol) no header; detecta o tema do navegador (prefers-color-scheme)
+  na 1ª visita e memoriza a escolha (localStorage, atributo data-theme no <html>). Tema por
+  variáveis CSS (--bg, --card, --text, --muted, --border, --hover, --soft, --accent-soft,
+  --accent-soft-text, --header-bg) com bloco :root[data-theme="dark"]. Header no dark = azul-
+  ardósia escuro (#17213a), combinando com os cards (o verde fica no logo e na aba ativa).
+  Gráficos permanecem PREENCHIDOS nos dois temas (contorno-só foi testado e descartado).
+  color-scheme ajusta controles nativos.
+- **Aba Gastos:** ordem = "Novo gasto (avulso)" primeiro (card com destaque: borda verde 2px +
+  título verde), depois "Fixos do mês", depois lista de avulsos e "Gasto total mensal".
+- **Listas com mais respiro:** padding vertical 16px e mais espaço nome/detalhes (modal de
+  importação mantém-se compacto).
+- **Nome de quem pagou** colorido na lista (Gui verde, Nathi vermelho transparente).
