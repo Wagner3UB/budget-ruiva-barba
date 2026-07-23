@@ -100,13 +100,13 @@ input, select { font-family: inherit; }
 
 .item {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 12px 0; border-bottom: 1px solid var(--border);
+  padding: 16px 2px; border-bottom: 1px solid var(--border);
 }
 .item:last-child { border-bottom: none; }
 .item .info { display: flex; align-items: center; gap: 10px; }
 .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-.item .desc { font-size: 15px; }
-.item .meta { font-size: 12px; color: var(--muted); }
+.item .desc { font-size: 15px; line-height: 1.4; }
+.item .meta { font-size: 12px; color: var(--muted); margin-top: 5px; line-height: 1.5; }
 .item .amt { font-weight: 600; }
 .item .x { background: none; border: none; color: var(--muted); font-size: 16px; padding: 4px 8px; }
 
@@ -435,3 +435,6 @@ html, body { overflow-x: hidden; }
   font-size: 12px; font-weight: 700; letter-spacing: .02em;
 }
 .topbar h1 { font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.import-col-scroll .item { padding: 9px 2px; }
+.import-col-scroll .item .meta { margin-top: 3px; }
