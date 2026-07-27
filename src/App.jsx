@@ -124,7 +124,7 @@ export default function App() {
       <header className="appheader">
       <div className="topbar">
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
-          <div className="logo-mark">R&amp;B</div>
+          <span className="brand-logo header-logo" role="img" aria-label="Ruiva & Barba" />
           <div style={{ minWidth: 0 }}>
             <h1>Ruiva &amp; Barba Financials</h1>
             <div className="sub">{session.user.email}</div>

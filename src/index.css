@@ -483,3 +483,15 @@ html, body { overflow-x: hidden; }
   .import-col-scroll { overflow: visible; }
   .modal-actions .btn { width: 100%; }
 }
+
+/* ============ Logo da marca (header + login) ============ */
+.brand-logo {
+  display: inline-block; background-color: currentColor;
+  -webkit-mask: url(/logo2.svg) center / contain no-repeat;
+  mask: url(/logo2.svg) center / contain no-repeat;
+}
+.header-logo { width: 58px; height: 34px; color: #fff; flex: 0 0 auto; }
+.login-logo-color { width: 170px; height: auto; display: block; margin: 0 auto 6px; }
+.login-logo-mono { width: 170px; height: 97px; color: #e6edf5; margin: 0 auto 6px; display: none; }
+[data-theme="dark"] .login-logo-color { display: none; }
+[data-theme="dark"] .login-logo-mono { display: block; }

@@ -18,7 +18,8 @@ export default function Login() {
   return (
     <div className="login-wrap">
       <div className="login-card">
-        <div className="logo">💶</div>
+        <img className="login-logo-color" src="/logo2.svg" alt="Ruiva & Barba" />
+        <span className="login-logo-mono brand-logo" role="img" aria-label="Ruiva & Barba" />
         <h1>Ruiva &amp; Barba Financials</h1>
         <p className="tagline">Entre com seu e-mail e senha</p>
         {err && <div className="msg err">{err}</div>}
