@@ -454,10 +454,21 @@ html, body { overflow-x: hidden; }
   position: fixed; inset: 0; z-index: 9999;
   background: #f5eede;
   display: flex; align-items: center; justify-content: center;
-  transition: opacity .4s ease;
+  transition: opacity .45s ease;
 }
 .splash.out { opacity: 0; }
-.splash img { width: 45vw; max-width: 45vw; height: auto; }
+.splash img {
+  width: 45vw; max-width: 45vw; height: auto;
+  opacity: 1; transform: scale(1);
+  animation: splashIn .7s cubic-bezier(.2,.75,.3,1);
+  transition: opacity .45s ease, transform .45s ease;
+}
+.splash.out img { opacity: 0; transform: scale(1.08); }
+@keyframes splashIn {
+  0%   { opacity: 0; transform: scale(.85); }
+  60%  { opacity: 1; }
+  100% { opacity: 1; transform: scale(1); }
+}
 @media (max-width: 760px) { .splash img { width: 90vw; max-width: 90vw; } }
 
 /* ============ Modal de importação: tela cheia no mobile ============ */
