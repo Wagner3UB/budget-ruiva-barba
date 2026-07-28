@@ -458,18 +458,23 @@ html, body { overflow-x: hidden; }
 }
 .splash.out { opacity: 0; }
 .splash img {
-  width: 45vw; max-width: 45vw; height: auto;
+  height: auto;
   opacity: 1; transform: scale(1);
   animation: splashIn .7s cubic-bezier(.2,.75,.3,1);
   transition: opacity .45s ease, transform .45s ease;
 }
+.splash-desk { width: 45vw; max-width: 45vw; display: block; }
+.splash-mobile { display: none; }
 .splash.out img { opacity: 0; transform: scale(1.08); }
 @keyframes splashIn {
   0%   { opacity: 0; transform: scale(.85); }
   60%  { opacity: 1; }
   100% { opacity: 1; transform: scale(1); }
 }
-@media (max-width: 760px) { .splash img { width: 90vw; max-width: 90vw; } }
+@media (max-width: 760px) {
+  .splash-desk { display: none; }
+  .splash-mobile { display: block; width: auto; height: 58vh; max-height: 70vh; max-width: 82vw; }
+}
 
 /* ============ Modal de importação: tela cheia no mobile ============ */
 @media (max-width: 760px) {
@@ -487,12 +492,12 @@ html, body { overflow-x: hidden; }
 /* ============ Logo da marca (header + login) ============ */
 .brand-logo {
   display: inline-block; background-color: currentColor;
-  -webkit-mask: url(/logo2.svg) center / contain no-repeat;
-  mask: url(/logo2.svg) center / contain no-repeat;
+  -webkit-mask: url(/logo_ela_eu.svg) center / contain no-repeat;
+  mask: url(/logo_ela_eu.svg) center / contain no-repeat;
 }
-.header-logo { width: 58px; height: 34px; color: #fff; flex: 0 0 auto; }
-.login-logo-color { width: 170px; height: auto; display: block; margin: 0 auto 6px; }
-.login-logo-mono { width: 170px; height: 97px; color: #e6edf5; margin: 0 auto 6px; display: none; }
+.header-logo { width: 26px; height: 36px; color: #fff; flex: 0 0 auto; }
+.login-logo-color { width: 108px; height: auto; display: block; margin: 0 auto 8px; }
+.login-logo-mono { width: 108px; height: 151px; color: #e6edf5; margin: 0 auto 8px; display: none; }
 [data-theme="dark"] .login-logo-color { display: none; }
 [data-theme="dark"] .login-logo-mono { display: block; }
 
