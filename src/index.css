@@ -488,16 +488,8 @@ html, body { overflow-x: hidden; }
 }
 
 /* ============ Logo da marca (header + login) ============ */
-.brand-logo {
-  display: inline-block; background-color: currentColor;
-  -webkit-mask: url(/logo_ela_eu.svg) center / contain no-repeat;
-  mask: url(/logo_ela_eu.svg) center / contain no-repeat;
-}
-.header-logo { width: 26px; height: 36px; color: #fff; flex: 0 0 auto; }
+.header-logo { width: auto; height: 36px; flex: 0 0 auto; display: block; }
 .login-logo-color { width: 108px; height: auto; display: block; margin: 0 auto 8px; }
-.login-logo-mono { width: 108px; height: 151px; color: #e6edf5; margin: 0 auto 8px; display: none; }
-[data-theme="dark"] .login-logo-color { display: none; }
-[data-theme="dark"] .login-logo-mono { display: block; }
 
 
 /* ============ Botão voltar ao topo ============ */

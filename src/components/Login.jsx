@@ -19,7 +19,6 @@ export default function Login() {
     <div className="login-wrap">
       <div className="login-card">
         <img className="login-logo-color" src="/logo_ela_eu.svg" alt="Ruiva & Barba" />
-        <span className="login-logo-mono brand-logo" role="img" aria-label="Ruiva & Barba" />
         <h1>Ruiva &amp; Barba Financials</h1>
         <p className="tagline">Entre com seu e-mail e senha</p>
         {err && <div className="msg err">{err}</div>}
