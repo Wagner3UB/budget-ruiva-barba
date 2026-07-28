@@ -124,21 +124,16 @@ export default function App() {
       <header className="appheader">
       <div className="topbar">
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
-          <img className="header-logo" src="/logo_ela_eu.svg" alt="Ruiva & Barba" />
-          <div style={{ minWidth: 0 }}>
-            <h1>Ruiva &amp; Barba Financials</h1>
-            <div className="sub">{session.user.email}</div>
-          </div>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <button className="hicon nav-burger" title="menu" onClick={() => setMenuOpen((o) => !o)}>
             {menuOpen ? <IconClose /> : <IconMenu />}
           </button>
-          <button className="hicon" title={theme === 'dark' ? 'Tema claro' : 'Tema escuro'} onClick={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}>
-            {theme === 'dark' ? <IconSun /> : <IconMoon />}
-          </button>
-          <button className={`hicon ${tab === 'admin' ? 'hicon-on' : ''}`} title="Admin" onClick={() => setTab('admin')}><IconGear /></button>
-          <button className="hicon" title="Sair" onClick={() => supabase.auth.signOut()}><IconLogout /></button>
+          <img className="header-logo" src="/logo_ela_eu.svg" alt="Ruiva & Barba" />
+          <div style={{ minWidth: 0 }}>
+            <h1>Ruiva &amp; Barba Financials</h1>
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button className={`hicon ${tab === 'admin' ? 'hicon-on' : ''}`} title="Ajustes" onClick={() => setTab('admin')}><IconGear /></button>
         </div>
       </div>
 
@@ -161,7 +156,7 @@ export default function App() {
         {tab === 'nathi' && <PiggyBank piggy="nathi" {...shared} />}
         {tab === 'graficos' && <Graficos {...shared} />}
         {tab === 'importar' && <ImportStatement {...shared} />}
-        {tab === 'admin' && <Settings {...shared} />}
+        {tab === 'admin' && <Settings {...shared} theme={theme} setTheme={setTheme} onLogout={() => supabase.auth.signOut()} email={session.user.email} />}
       </div>
     </div>
   )

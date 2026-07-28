@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { supabase } from '../supabaseClient'
 import { PALETTE } from '../lib/helpers'
-import { IconTrash } from './icons'
+import { IconTrash, IconSun, IconMoon, IconLogout } from './icons'
 
-export default function Settings({ categories, accounts, reload }) {
+export default function Settings({ categories, accounts, reload, theme, setTheme, onLogout, email }) {
   const [cat, setCat] = useState('')
   const [acc, setAcc] = useState('')
   const [msg, setMsg] = useState('')
@@ -33,6 +33,25 @@ export default function Settings({ categories, accounts, reload }) {
   return (
     <>
       {msg && <div className="msg err">{msg}</div>}
+
+      <div className="card">
+        <h2>Preferências</h2>
+        <div className="item">
+          <span className="desc">Tema {theme === 'dark' ? 'escuro' : 'claro'}</span>
+          <button className="btn btn-sm btn-ghost" onClick={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, width: 'auto' }}>
+            {theme === 'dark' ? <IconSun /> : <IconMoon />}
+            {theme === 'dark' ? 'Mudar para claro' : 'Mudar para escuro'}
+          </button>
+        </div>
+        <div className="item">
+          <span className="desc">{email}</span>
+          <button className="btn btn-sm btn-ghost" onClick={onLogout}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, width: 'auto' }}>
+            <IconLogout /> Sair
+          </button>
+        </div>
+      </div>
 
       <div className="card">
         <h2>Categorias ({categories.length})</h2>
