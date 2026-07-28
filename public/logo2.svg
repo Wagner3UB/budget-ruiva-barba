@@ -12,6 +12,6 @@
         <path d="M2.053,-0.026C3.043,0.304 8.019,17.723 8.019,17.723C8.019,17.723 1.704,23.372 0,25C-10.5,37.161 -16.283,50.878 -19.125,66.5C-19.294,67.386 -19.463,68.271 -19.637,69.184C-20.68,74.776 -22.308,83.635 -22.872,89.296C-29.974,86.235 -40.652,70.757 -40.652,70.757C-40.652,70.757 -37.804,63.839 -37.125,59.188C-36.991,58.265 -36.856,57.342 -36.718,56.391C-34.479,43.036 -28.218,31.643 -20,21C-19.439,20.215 -18.879,19.43 -18.301,18.621C-15.292,14.432 -15.292,14.432 -14,13C-13.34,13 -2.313,2.961 2.053,-0.026Z" style="fill:rgb(15,118,110);fill-rule:nonzero;"/>
     </g>
     <defs>
-        <linearGradient id="_Linear1" x1="0" y1="0" x2="1" y2="0" gradientUnits="userSpaceOnUse" gradientTransform="matrix(44,30,-30,44,365,189)"><stop offset="0" style="stop-color:rgb(15,118,110);stop-opacity:1"/><stop offset="0.58" style="stop-color:rgb(136,76,64);stop-opacity:1"/><stop offset="1" style="stop-color:rgb(192,57,43);stop-opacity:1"/></linearGradient>
+        <linearGradient id="_Linear1" x1="0" y1="0" x2="1" y2="0" gradientUnits="userSpaceOnUse" gradientTransform="matrix(64,9,-9,64,373,209)"><stop offset="0" style="stop-color:rgb(15,118,110);stop-opacity:1"/><stop offset="0.2" style="stop-color:rgb(84,94,84);stop-opacity:1"/><stop offset="0.43" style="stop-color:rgb(157,69,56);stop-opacity:1"/><stop offset="1" style="stop-color:rgb(192,57,43);stop-opacity:1"/></linearGradient>
     </defs>
 </svg>
