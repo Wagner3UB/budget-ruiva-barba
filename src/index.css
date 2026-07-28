@@ -463,8 +463,7 @@ html, body { overflow-x: hidden; }
   animation: splashIn .7s cubic-bezier(.2,.75,.3,1);
   transition: opacity .45s ease, transform .45s ease;
 }
-.splash-desk { width: 45vw; max-width: 45vw; display: block; }
-.splash-mobile { display: none; }
+.splash-logo { width: 45vw; max-width: 45vw; display: block; }
 .splash.out img { opacity: 0; transform: scale(1.08); }
 @keyframes splashIn {
   0%   { opacity: 0; transform: scale(.85); }
@@ -472,8 +471,7 @@ html, body { overflow-x: hidden; }
   100% { opacity: 1; transform: scale(1); }
 }
 @media (max-width: 760px) {
-  .splash-desk { display: none; }
-  .splash-mobile { display: block; width: auto; height: 58vh; max-height: 70vh; max-width: 82vw; }
+  .splash-logo { width: auto; max-width: 82vw; height: 58vh; max-height: 70vh; }
 }
 
 /* ============ Modal de importação: tela cheia no mobile ============ */

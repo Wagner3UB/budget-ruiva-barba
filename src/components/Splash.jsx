@@ -10,8 +10,10 @@ export default function Splash() {
   if (phase === 'gone') return null
   return (
     <div className={`splash ${phase === 'out' ? 'out' : ''}`}>
-      <img className="splash-desk" src="/logo2.svg" alt="Ruiva & Barba Financials" />
-      <img className="splash-mobile" src="/logo_ela_eu.svg" alt="Ruiva & Barba Financials" />
+      <picture>
+        <source media="(max-width: 760px)" srcSet="/logo_ela_eu.svg" />
+        <img className="splash-logo" src="/logo2.svg" alt="Ruiva & Barba Financials" />
+      </picture>
     </div>
   )
 }
