@@ -171,6 +171,9 @@ ao hambúrguer no mobile. Recuo lateral padrão 2.5vw (header e conteúdo alinha
 Aba Importar → escolher arquivo (.xlsx/.csv). Abre MODAL de revisão (80vw, 95vh, duas
 colunas Saídas | Entradas com scroll independente; conta/pessoa no topo; selecionar todos
 por coluna; nada grava até confirmar).
+No **mobile** a modal é full-screen e os containers CRESCEM até caber tudo (sem scroll
+interno nos itens — decisão do usuário: "prefiro 2km de altura a scroll travado"); quem
+rola é o overlay (a tela inteira). Botão "voltar ao topo" funciona dentro da modal.
 Formatos reconhecidos automaticamente:
 - **BBVA "Movimenti"** (.xlsx): colunas Data valuta, Data, Causale, Movimento, Importo ("-42.12 EUR").
 - **BBVA "Ultime transazioni"** (.xlsx): coluna do comerciante = "Parola chiave"; Importo numérico.
@@ -224,3 +227,18 @@ Lógica:
 - **Listas com mais respiro:** padding vertical 16px e mais espaço nome/detalhes (modal de
   importação mantém-se compacto).
 - **Nome de quem pagou** colorido na lista (Gui verde, Nathi vermelho transparente).
+
+## 11. Atualizações recentes (v1.0.x — pós-release)
+- **Splash / tela de entrada:** logo da marca centralizado sobre fundo creme, 45vw no
+  desktop e 90vw no mobile, por ~3s, com animação de entrada e saída (fade/scale).
+  Componente `src/components/Splash.jsx`, montado ao lado do App em `main.jsx`.
+- **Logo da marca no lugar dos ícones:** no header, o monograma "R&B" virou o logo em
+  branco (via CSS mask, `currentColor`), para contrastar no verde (claro) e no ardósia
+  (escuro). No login, o 💶 virou o logo: **colorido** (vermelho+azul original) no tema
+  claro sobre o card branco, e **monocromático claro** no tema escuro (troca via
+  `[data-theme="dark"]`). Arquivo do logo: `public/logo2.svg`.
+- **Modal de importação no mobile:** containers crescem até caber tudo (sem scroll interno);
+  o overlay recebe o scroll da tela inteira. Ver seção 7.
+- **Botão "voltar ao topo" global:** `src/components/ScrollTop.jsx`, montado em `main.jsx`.
+  Aparece após rolar >300px; detecta se quem está rolando é a página ou o overlay da modal
+  e sobe o container correto (listener de scroll em fase de captura). Ícone `IconArrowUp`.

@@ -2,6 +2,18 @@
 
 Versionamento semântico: MAJOR.MINOR.PATCH.
 
+## Não lançado (pós-v1.0.0)
+### Interface
+- **Splash / tela de entrada:** logo da marca sobre fundo creme (45vw desktop / 90vw mobile),
+  ~3s, com animação de entrada e saída.
+- **Logo da marca:** substitui o monograma "R&B" no header (branco, contrasta nos dois temas)
+  e o 💶 no login (colorido no tema claro, monocromático no escuro).
+- **Botão "voltar ao topo"** global: aparece após rolar, funciona também dentro da modal.
+
+### Correções
+- **Modal de importação no mobile:** full-screen; os containers crescem até caber todos os
+  itens (sem scroll interno travado) — a tela inteira rola.
+
 ## v1.0.0 — 2026-07-23
 Primeira versão completa e em uso.
 
