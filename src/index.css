@@ -471,7 +471,7 @@ html, body { overflow-x: hidden; }
   100% { opacity: 1; transform: scale(1); }
 }
 @media (max-width: 760px) {
-  .splash-logo { width: auto; max-width: 82vw; height: 58vh; max-height: 70vh; }
+  .splash-logo { width: 46vh; max-width: 82vw; height: auto; max-height: 70vh; }
 }
 
 /* ============ Modal de importação: tela cheia no mobile ============ */
