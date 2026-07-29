@@ -3,6 +3,12 @@
 Versionamento semântico: MAJOR.MINOR.PATCH.
 
 ## Não lançado (pós-v1.0.0)
+### Recursos
+- **Ajuste manual do Disponível** (aba Entradas): por pessoa e por mês, corrige o Disponível
+  para cima ou para baixo quando a realidade difere do calculado. Segue somando nos meses
+  seguintes (modelo acumulado). Tabela `adjustments` — **migração 15**.
+- **Removido o tipo "Casal"** de gasto (era um erro): agora só Gui e Nathi.
+
 ### Interface
 - **Splash / tela de entrada:** logo da marca sobre fundo creme (45vw desktop / 90vw mobile),
   ~3s, com animação de entrada e saída.

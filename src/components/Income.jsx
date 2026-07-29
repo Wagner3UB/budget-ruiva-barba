@@ -5,7 +5,7 @@ import { money, todayISO, counted, parseAmount, fmtDate, disponivelOf, periodKey
 
 const PEOPLE = ['Gui', 'Nathi']
 
-export default function Income({ incomes, expenses, month, setMonth, balances, reload }) {
+export default function Income({ incomes, expenses, month, setMonth, balances, adjustments = [], reload }) {
   const [person, setPerson] = useState('Gui')
   const [date, setDate] = useState(todayISO())
   const [desc, setDesc] = useState('')
@@ -13,6 +13,8 @@ export default function Income({ incomes, expenses, month, setMonth, balances, r
   const [busy, setBusy] = useState(false)
   const [editOpening, setEditOpening] = useState(false)
   const [openVals, setOpenVals] = useState({})
+  const [adjVals, setAdjVals] = useState({})
+  const [adjBusy, setAdjBusy] = useState(false)
 
   const num = (v) => { const n = parseAmount(v); return Number.isFinite(n) ? n : 0 }
 
@@ -28,8 +30,12 @@ export default function Income({ incomes, expenses, month, setMonth, balances, r
   const cumIn = (p) => incomes.filter((i) => i.person === p && i.month <= month).reduce((s, i) => s + Number(i.amount), 0)
   const cumOut = (p) => expenses.filter((e) => e.paid_by === p && counted(e) && !(e.piggy_deposit && e.from_cc === false) && periodKey(e.date) <= month).reduce((s, e) => s + Number(e.amount), 0)
 
-  // Disponivel = saldo inicial + soma(entradas - saidas) de TODOS os meses ate o mes atual (inclusive)
-  const disponivel = (p) => disponivelOf(p, { incomes, expenses, balances }, month)
+  // ajuste manual do mês selecionado + acumulado até o mês
+  const adjOf = (p) => Number(adjustments.find((a) => a.person === p && a.month === month)?.amount || 0)
+  const cumAdj = (p) => adjustments.filter((a) => a.person === p && a.month <= month).reduce((s, a) => s + Number(a.amount), 0)
+
+  // Disponivel = saldo inicial + soma(entradas - saidas + ajustes) de TODOS os meses ate o mes atual (inclusive)
+  const disponivel = (p) => disponivelOf(p, { incomes, expenses, balances, adjustments }, month)
 
   const monthIncomes = useMemo(
     () => incomes.filter((i) => i.month === month).sort((a, b) => a.person.localeCompare(b.person)),
@@ -55,6 +61,19 @@ export default function Income({ incomes, expenses, month, setMonth, balances, r
     setEditOpening(false); setOpenVals({}); reload()
   }
 
+  const saveAdj = async (p) => {
+    const raw = adjVals[p]
+    if (raw === undefined) return
+    setAdjBusy(true)
+    const val = num(raw)
+    if (val === 0) {
+      await supabase.from('adjustments').delete().eq('person', p).eq('month', month)
+    } else {
+      await supabase.from('adjustments').upsert({ person: p, month, amount: val }, { onConflict: 'person,month' })
+    }
+    setAdjVals((o) => { const n = { ...o }; delete n[p]; return n }); setAdjBusy(false); reload()
+  }
+
   return (
     <>
       <div className="month-nav">
@@ -73,6 +92,7 @@ export default function Income({ incomes, expenses, month, setMonth, balances, r
               </div>
               <div className="meta" style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>
                 inicial {money(openingOf(p))} + entradas {money(cumIn(p))} − saídas {money(cumOut(p))}
+                {cumAdj(p) !== 0 ? ` ${cumAdj(p) < 0 ? '−' : '+'} ajustes ${money(Math.abs(cumAdj(p)))}` : ''}
               </div>
               <div className="meta" style={{ fontSize: 11, color: 'var(--muted)' }}>
                 (mês: +{money(monthIncome(p))} · −{money(monthOut(p))})
@@ -105,6 +125,34 @@ export default function Income({ incomes, expenses, month, setMonth, balances, r
           </div>
         ))}
         {editOpening && <button className="btn" style={{ marginTop: 12 }} onClick={saveOpening}>Salvar saldo inicial</button>}
+      </div>
+
+      <div className="card">
+        <h2>Ajuste manual — {monthLabel(month)}</h2>
+        <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: -4 }}>
+          Corrige o Disponível quando a realidade diferir do calculado (ex.: o app mostra 500 e você
+          tem 525 → ajuste <b>+25</b>; se tem 480 → <b>-25</b>). Vale para este mês e segue somando nos seguintes.
+        </p>
+        {PEOPLE.map((p) => {
+          const cur = adjOf(p)
+          const val = adjVals[p] !== undefined ? adjVals[p] : (cur !== 0 ? String(cur).replace('.', ',') : '')
+          return (
+            <div className="item" key={p}>
+              <span className="desc">
+                {p}
+                <span style={{ fontSize: 11, color: 'var(--muted)', marginLeft: 8 }}>
+                  Disponível: {money(disponivel(p))}
+                </span>
+              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <input style={{ width: 90, padding: '6px 8px', border: '1px solid var(--border)', borderRadius: 8, textAlign: 'right' }}
+                  inputMode="decimal" placeholder="0,00" value={val}
+                  onChange={(e) => setAdjVals((o) => ({ ...o, [p]: e.target.value }))} />
+                <button className="btn btn-sm" disabled={adjBusy || adjVals[p] === undefined} onClick={() => saveAdj(p)}>salvar</button>
+              </div>
+            </div>
+          )
+        })}
       </div>
 
       <div className="card">

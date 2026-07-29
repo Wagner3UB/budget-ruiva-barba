@@ -5,7 +5,7 @@ import { money, todayISO, monthKey, daysInMonth, fixedActiveIn, PALETTE, parseAm
 import KpiSummary from './KpiSummary'
 
 const PAY = ['Não', 'Sim', 'Não contabilizado']
-const WHO = ['Gui', 'Nathi', 'Casal']
+const WHO = ['Gui', 'Nathi']
 
 export default function Expenses(props) {
   const { categories, monthExpenses, accounts, fixedExpenses, month, setMonth, reload } = props

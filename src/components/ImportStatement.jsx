@@ -4,7 +4,7 @@ import { supabase } from '../supabaseClient'
 import { money, fmtDate } from '../lib/helpers'
 import { IconClose } from './icons'
 
-const WHO = ['Gui', 'Nathi', 'Casal']
+const WHO = ['Gui', 'Nathi']
 
 // Regras de categorização por palavra-chave no texto do movimento
 const CAT_RULES = [

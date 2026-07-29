@@ -51,7 +51,7 @@ export const fixedActiveIn = (f, month) =>
   f.active && f.start_month <= month && (!f.end_month || month <= f.end_month)
 
 // Disponível de uma pessoa = saldo inicial + entradas − saídas (até o mês, cumulativo)
-export function disponivelOf(person, { incomes = [], expenses = [], balances = [] }, month) {
+export function disponivelOf(person, { incomes = [], expenses = [], balances = [], adjustments = [] }, month) {
   const opening = Number(balances.find((b) => b.person === person)?.opening || 0)
   const inc = incomes
     .filter((i) => i.person === person && (!month || i.month <= month))
@@ -59,7 +59,10 @@ export function disponivelOf(person, { incomes = [], expenses = [], balances = [
   const out = expenses
     .filter((e) => e.paid_by === person && counted(e) && !(e.piggy_deposit && e.from_cc === false) && (!month || periodKey(e.date) <= month))
     .reduce((s, e) => s + Number(e.amount), 0)
-  return opening + inc - out
+  const adj = adjustments
+    .filter((a) => a.person === person && (!month || a.month <= month))
+    .reduce((s, a) => s + Number(a.amount), 0)
+  return opening + inc - out + adj
 }
 
 // Saldo de um cofrinho ('casa' | 'nathi') no ano = inicial + depósitos − taxas pagas

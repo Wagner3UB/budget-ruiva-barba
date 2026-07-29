@@ -83,6 +83,7 @@ Obs: nunca usar `git push -f` (uma vez achatou o histórico — não repetir).
 - **12** `migracao_12_excluir_calculo_mensal.sql`: exclude_monthly em tax_payments.
 - **13** `migracao_13_categoria_fora_calculo.sql`: exclude_monthly em house_taxes.
 - **14** `migracao_14_deposito_externo.sql`: from_cc em expenses (depósito externo vs. da conta corrente).
+- **15** `migracao_15_ajustes_disponivel.sql`: tabela `adjustments` (person, month, amount, note; único por person+month) — ajuste manual do Disponível.
 
 ## 5. Regras de negócio (decisões)
 ### Ciclo mensal — começa dia 10
@@ -97,6 +98,12 @@ pagos pela pessoa, até o período selecionado (<=)`. A sobra de um mês passa p
 próximo. Só conta gasto com pay_status != 'Não contabilizado'. Gasto "→ poupança" e
 depósito de reserva reduzem o Disponível (dinheiro saiu da conta). Card mostra a conta
 acumulada e, embaixo, o movimento só do mês.
+**Ajuste manual** (tabela `adjustments`, um por pessoa+mês): soma acumulada (month <=)
+entra no Disponível. Serve para reconciliar quando o valor real difere do calculado
+(ex.: app diz 500, real 525 → ajuste +25). Editável na aba Entradas; salvar 0 apaga o ajuste.
+
+### Quem paga — só Gui e Nathi
+O tipo "Casal" foi removido (era um erro). `WHO = ['Gui','Nathi']` em Expenses e ImportStatement.
 
 ### Pago? (pay_status)
 'Sim' (pago), 'Não' (a pagar), 'Não contabilizado' (não entra em nenhuma soma).
