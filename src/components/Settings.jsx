@@ -29,6 +29,7 @@ export default function Settings({ categories, accounts, reload, theme, setTheme
     else { setMsg(''); setAcc(''); reload() }
   }
   const delAcc = async (id) => { await supabase.from('accounts').delete().eq('id', id); reload() }
+  const updateAcc = async (a, patch) => { await supabase.from('accounts').update(patch).eq('id', a.id); reload() }
 
   return (
     <>
@@ -77,10 +78,26 @@ export default function Settings({ categories, accounts, reload, theme, setTheme
 
       <div className="card">
         <h2>Contas / Bancos ({accounts.length})</h2>
+        <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: -4 }}>
+          Preencha o IBAN e o tipo de cada conta. Isso permite detectar transferências entre as suas
+          próprias contas na importação (elas não viram gasto/entrada). Marque "poupança" a conta do Salvadanaio.
+        </p>
         {accounts.map((a) => (
-          <div className="item" key={a.id}>
-            <span className="desc">{a.name}</span>
-            <button className="x" title="excluir" onClick={() => delAcc(a.id)}><IconTrash /></button>
+          <div className="item" key={a.id} style={{ flexDirection: 'column', alignItems: 'stretch', gap: 6 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span className="desc">{a.name}</span>
+              <button className="x" title="excluir" onClick={() => delAcc(a.id)}><IconTrash /></button>
+            </div>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <input placeholder="IBAN (opcional)" defaultValue={a.iban || ''}
+                onBlur={(e) => { const v = e.target.value.trim(); if (v !== (a.iban || '')) updateAcc(a, { iban: v || null }) }}
+                style={{ flex: 1, padding: '6px 8px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 13 }} />
+              <select defaultValue={a.tipo || 'gastavel'} onChange={(e) => updateAcc(a, { tipo: e.target.value })}
+                style={{ padding: '6px 8px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 13 }}>
+                <option value="gastavel">gastável</option>
+                <option value="poupanca">poupança</option>
+              </select>
+            </div>
           </div>
         ))}
         <form onSubmit={addAcc} style={{ marginTop: 10, display: 'flex', gap: 8 }}>
