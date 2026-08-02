@@ -56,13 +56,25 @@ const cleanING = (causale, descr) => {
   return String(causale || '').trim()
 }
 
-function classify(text, amount) {
+// palavras-chave que denunciam transferência entre contas próprias
+const TRANSFER_RE = /giro ?conto|trasferimento (su|da) conto|\bfixos? mes\b|\bfixo junho\b/i
+
+function classify(text, amount, ownIbans = []) {
   const t = text.toLowerCase()
   if (t.includes('saldo inizial') || t.includes('saldo final')) return 'ignorar'
+  // transferência entre contas próprias (identificada pelo IBAN cadastrado)
+  for (const o of ownIbans) {
+    if (o.iban && t.includes(o.iban)) {
+      if (o.tipo === 'poupanca') return amount < 0 ? 'reserva' : 'ignorar' // dinheiro indo/voltando da poupança
+      return 'ignorar' // outro bolso gastável = transferência interna
+    }
+  }
   if (t.includes('fixo') || t.includes('fixos')) return amount < 0 ? 'reserva' : 'ignorar'
-  if (t.includes('giroconto') || t.includes('giro conto') || t.includes('trasferimento su conto')) return 'ignorar'
+  if (TRANSFER_RE.test(t)) return 'ignorar'
   return amount < 0 ? 'gasto' : 'entrada'
 }
+const isTransferText = (text, ownIbans = []) =>
+  TRANSFER_RE.test(text) || ownIbans.some((o) => o.iban && text.toLowerCase().includes(o.iban))
 
 function parseCSV(text, delim) {
   const rows = []; let row = []; let cur = ''; let inq = false
@@ -94,6 +106,11 @@ export default function ImportStatement({ categories, accounts, expenses, income
     const m = {}; for (const c of categories) m[c.name.toLowerCase()] = c; return m
   }, [categories])
   const matchCat = (name) => catByName[name.toLowerCase()]?.id || ''
+
+  // IBANs das contas próprias (p/ detectar transferência interna)
+  const ownIbans = useMemo(
+    () => accounts.filter((a) => a.iban).map((a) => ({ iban: String(a.iban).replace(/\s/g, '').toLowerCase(), tipo: a.tipo || 'gastavel' })),
+    [accounts])
 
   // mapa: valor -> lista de datas já existentes (p/ detectar duplicado por valor + data próxima)
   const existByAmount = useMemo(() => {
@@ -161,12 +178,13 @@ export default function ImportStatement({ categories, accounts, expenses, income
         text = `${row[mCol]} ${row[col('movimento')]}`
       }
       if (!amount || !date) continue
-      const type = classify(text, amount)
+      const type = classify(text, amount, ownIbans)
+      const transfer = type === 'ignorar' && isTransferText(text, ownIbans)
       const dup = isDup(amount, date)
       const k = Math.abs(amount).toFixed(2)
       ;(localMap[k] = localMap[k] || []).push(date)
       parsed.push({
-        id: `${r}`, date, desc: merchant || text.trim().slice(0, 40), amount, type,
+        id: `${r}`, date, desc: merchant || text.trim().slice(0, 40), amount, type, transfer,
         categoryId: matchCat(guessCategory(text)), include: type !== 'ignorar' && !dup, dup,
       })
     }
@@ -226,6 +244,7 @@ export default function ImportStatement({ categories, accounts, expenses, income
           <div className="desc">
             <input value={r.desc} onChange={(e) => upd(r.id, { desc: e.target.value })}
               style={{ border: 'none', borderBottom: '1px solid var(--border)', fontSize: 14, width: 130, background: 'transparent' }} />
+            {r.transfer && <span className="tag" style={{ marginLeft: 6, background: '#e0e7ff', color: '#3730a3' }}>transferência</span>}
             {r.dup && <span className="tag" style={{ marginLeft: 6, background: '#fef3c7', color: '#92400e' }}>duplicado?</span>}
           </div>
           <div className="meta" style={{ display: 'flex', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
