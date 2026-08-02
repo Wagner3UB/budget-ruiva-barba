@@ -198,6 +198,8 @@ export default function Expenses(props) {
     .filter((f) => !paidFixedThisMonth[f.id])
     .reduce((s, f) => s + Number(f.amount), 0)
 
+  const monthAdj = (props.adjustments || []).filter((a) => a.month === month && Number(a.amount) !== 0)
+
   return (
     <>
       {pop && (<div className="note-pop" style={{ left: pop.x, top: pop.y }}>{pop.text}</div>)}
@@ -207,6 +209,18 @@ export default function Expenses(props) {
         <button onClick={() => setMonth(shiftMonth(month, 1))}>›</button>
       </div>
       <KpiSummary {...props} />
+      {monthAdj.length > 0 && (
+        <div className="warn-banner">
+          ✋ Ajuste manual aplicado em {monthLabel(month)} — o Disponível foi corrigido à mão (na aba Entradas):
+          <div style={{ marginTop: 6, display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+            {monthAdj.map((a) => (
+              <span key={a.person}>
+                <b>{a.person}</b>: {Number(a.amount) < 0 ? '−' : '+'}{money(Math.abs(Number(a.amount)))}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
       {/* ---------- NOVO GASTO AVULSO ---------- */}
       <div className="card emph">
         <h2>{editingExpId ? 'Editar gasto' : 'Novo gasto (avulso)'}</h2>
