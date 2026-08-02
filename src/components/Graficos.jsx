@@ -22,7 +22,7 @@ export default function Graficos(props) {
   const dark = props.theme === 'dark'
   const catById = useMemo(() => Object.fromEntries(categories.map((c) => [c.id, c])), [categories])
   const pOk = (pb) => person === 'Ambos' || pb === person
-  const expOk = (e) => counted(e) && !(e.piggy_deposit && e.from_cc === false) && pOk(e.paid_by) && (!category || e.category_id === category)
+  const expOk = (e) => counted(e) && !(e.piggy_deposit && e.from_cc === false) && !e.piggy_withdraw && pOk(e.paid_by) && (!category || e.category_id === category)
 
   const monthsList = useMemo(() => {
     const arr = []
@@ -43,9 +43,8 @@ export default function Graficos(props) {
     const bal = (piggy, pers) => {
       const open = Number(piggyYear.find((p) => p.year === y && (p.piggy || 'casa') === piggy)?.opening || 0)
       const ap = expenses.filter((e) => (e.to_reserve || e.piggy_deposit) && e.paid_by === pers && Number((e.date || '').slice(0, 4)) === y && periodKey(e.date) <= k).reduce((s, e) => s + Number(e.amount), 0)
-      const ids = new Set(houseTaxes.filter((t) => t.year === y && (t.piggy || 'casa') === piggy).map((t) => t.id))
-      const paid = taxPayments.filter((t) => ids.has(t.tax_id) && t.paid && t.month <= mm).reduce((s, t) => s + Number(t.amount), 0)
-      return Math.round(open + ap - paid)
+      const ret = expenses.filter((e) => e.piggy_withdraw && (e.piggy || 'casa') === piggy && Number((e.date || '').slice(0, 4)) === y && periodKey(e.date) <= k).reduce((s, e) => s + Number(e.amount), 0)
+      return Math.round(open + ap - ret)
     }
     return { mes: monthLabel(k), Casa: bal('casa', 'Gui'), Nathi: bal('nathi', 'Nathi') }
   }), [monthsList, expenses, houseTaxes, taxPayments, piggyYear])
@@ -53,7 +52,7 @@ export default function Graficos(props) {
   // 3) Orçado x realizado (mês selecionado)
   const orcado = useMemo(() => {
     const real = {}
-    for (const e of expenses) if (periodKey(e.date) === month && counted(e) && pOk(e.paid_by)) real[e.category_id] = (real[e.category_id] || 0) + Number(e.amount)
+    for (const e of expenses) if (periodKey(e.date) === month && counted(e) && !e.piggy_withdraw && pOk(e.paid_by)) real[e.category_id] = (real[e.category_id] || 0) + Number(e.amount)
     return categories.map((c) => ({ nome: c.name, Orçado: Math.round(Number(c.ideal || 0)), Realizado: Math.round(real[c.id] || 0) }))
       .filter((r) => r.Orçado > 0 || r.Realizado > 0)
       .sort((a, b) => b.Realizado - a.Realizado).slice(0, 10)
@@ -71,7 +70,7 @@ export default function Graficos(props) {
   // 5) Top categorias (mês)
   const top = useMemo(() => {
     const m = {}
-    for (const e of expenses) if (periodKey(e.date) === month && counted(e) && pOk(e.paid_by)) m[e.category_id] = (m[e.category_id] || 0) + Number(e.amount)
+    for (const e of expenses) if (periodKey(e.date) === month && counted(e) && !e.piggy_withdraw && pOk(e.paid_by)) m[e.category_id] = (m[e.category_id] || 0) + Number(e.amount)
     return Object.entries(m).map(([id, v]) => ({ nome: catById[id]?.name || '—', valor: Math.round(v), color: catById[id]?.color }))
       .sort((a, b) => b.valor - a.valor).slice(0, 8)
   }, [expenses, month, person, catById])

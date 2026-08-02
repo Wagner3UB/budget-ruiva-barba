@@ -57,19 +57,23 @@ export function disponivelOf(person, { incomes = [], expenses = [], balances = [
     .filter((i) => i.person === person && (!month || i.month <= month))
     .reduce((s, i) => s + Number(i.amount), 0)
   const out = expenses
-    .filter((e) => e.paid_by === person && counted(e) && !(e.piggy_deposit && e.from_cc === false) && (!month || periodKey(e.date) <= month))
+    .filter((e) => e.paid_by === person && counted(e) && !(e.piggy_deposit && e.from_cc === false) && !e.piggy_withdraw && (!month || periodKey(e.date) <= month))
+    .reduce((s, e) => s + Number(e.amount), 0)
+  // Retiradas da reserva que caem na conta corrente (creditam o Disponível)
+  const wdr = expenses
+    .filter((e) => e.paid_by === person && e.piggy_withdraw && e.to_cc !== false && (!month || periodKey(e.date) <= month))
     .reduce((s, e) => s + Number(e.amount), 0)
   const adj = adjustments
     .filter((a) => a.person === person && (!month || a.month <= month))
     .reduce((s, a) => s + Number(a.amount), 0)
-  return opening + inc - out + adj
+  return opening + inc - out + adj + wdr
 }
 
 // Saldo de um cofrinho ('casa' | 'nathi') no ano = inicial + depósitos − taxas pagas
 export const PIGGY_PERSON = { casa: 'Gui', nathi: 'Nathi' }
 
 export function cofrinhoBalance(piggy, data, year) {
-  const { piggyYear = [], houseTaxes = [], taxPayments = [], expenses = [] } = data
+  const { piggyYear = [], expenses = [] } = data
   const person = PIGGY_PERSON[piggy] || 'Gui'
   const inYear = (d) => Number((d || '').slice(0, 4)) === year
   const opening = Number(piggyYear.find((y) => y.year === year && (y.piggy || 'casa') === piggy)?.opening || 0)
@@ -77,11 +81,11 @@ export function cofrinhoBalance(piggy, data, year) {
   const aportes = expenses
     .filter((e) => (e.to_reserve || e.piggy_deposit) && e.paid_by === person && inYear(e.date))
     .reduce((s, e) => s + Number(e.amount), 0)
-  const itemIds = new Set(houseTaxes.filter((t) => t.year === year && (t.piggy || 'casa') === piggy).map((t) => t.id))
-  const paid = taxPayments
-    .filter((p) => itemIds.has(p.tax_id) && p.paid)
-    .reduce((s, p) => s + Number(p.amount), 0)
-  return opening + aportes - paid
+  // retiradas = saídas da reserva (reserva → conta ou externas), por reserva
+  const retiradas = expenses
+    .filter((e) => e.piggy_withdraw && (e.piggy || 'casa') === piggy && inYear(e.date))
+    .reduce((s, e) => s + Number(e.amount), 0)
+  return opening + aportes - retiradas
 }
 
 // Converte "2.120,36" / "350,03" / "1000.50" em número. Retorna NaN se inválido.

@@ -52,8 +52,10 @@ export default function PiggyBank({ piggy = 'casa', expenses, incomes = [], fixe
   const aportes = expenses
     .filter((e) => (e.to_reserve || e.piggy_deposit) && e.paid_by === person && inYear(e.date))
     .reduce((s, e) => s + Number(e.amount), 0)
-  const paidTotal = payments.filter((p) => p.paid).reduce((s, p) => s + Number(p.amount), 0)
-  const balance = opening + aportes - paidTotal
+  const retiradas = expenses
+    .filter((e) => e.piggy_withdraw && (e.piggy || 'casa') === piggy && inYear(e.date))
+    .reduce((s, e) => s + Number(e.amount), 0)
+  const balance = opening + aportes - retiradas
 
   const pendingTransfers = payments
     .filter((p) => p.paid && !p.transferred)
@@ -76,14 +78,41 @@ export default function PiggyBank({ piggy = 'casa', expenses, incomes = [], fixe
   }
 
   const togglePaid = async (p) => {
+    const willPay = !p.paid
     await supabase.from('tax_payments').update({
-      paid: !p.paid, paid_date: !p.paid ? todayISO() : null,
-      transferred: !p.paid ? p.transferred : false,
+      paid: willPay, paid_date: willPay ? todayISO() : null,
+      transferred: willPay ? p.transferred : false,
     }).eq('id', p.id)
+    const taxName = items.find((i) => i.id === p.tax_id)?.name || 'Taxa'
+    if (willPay) {
+      // marca pago = lança o gasto na conta corrente (abate Disponível)
+      const catId = await ensureDepositCategory()
+      await supabase.from('expenses').insert({
+        date: todayISO(), category_id: catId,
+        description: taxName, place: taxName, amount: Number(p.amount),
+        paid_by: person, pay_status: 'Sim', piggy, tax_payment_id: p.id,
+      })
+    } else {
+      // desmarcar pago remove o gasto e a retirada vinculados
+      await supabase.from('expenses').delete().eq('tax_payment_id', p.id)
+    }
     reload()
   }
   const toggleTransferred = async (p) => {
-    await supabase.from('tax_payments').update({ transferred: !p.transferred }).eq('id', p.id); reload()
+    const willTransfer = !p.transferred
+    await supabase.from('tax_payments').update({ transferred: willTransfer }).eq('id', p.id)
+    const taxName = items.find((i) => i.id === p.tax_id)?.name || 'Taxa'
+    if (willTransfer) {
+      // transferido = retirada da reserva que cai na conta (abate reserva, credita Disponível)
+      await supabase.from('expenses').insert({
+        date: todayISO(), amount: Number(p.amount),
+        description: `Retirada reserva: ${taxName}`, place: 'Reservas',
+        paid_by: person, pay_status: 'Sim', piggy, piggy_withdraw: true, to_cc: true, tax_payment_id: p.id,
+      })
+    } else {
+      await supabase.from('expenses').delete().eq('tax_payment_id', p.id).eq('piggy_withdraw', true)
+    }
+    reload()
   }
   const toggleTaxExclude = async (it) => {
     await supabase.from('house_taxes').update({ exclude_monthly: !it.exclude_monthly }).eq('id', it.id); reload()
@@ -124,6 +153,7 @@ export default function PiggyBank({ piggy = 'casa', expenses, incomes = [], fixe
     document.getElementById('venc-form')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }
   const delPayment = async (p) => {
+    await supabase.from('expenses').delete().eq('tax_payment_id', p.id)
     await supabase.from('tax_payments').delete().eq('id', p.id)
     const others = payments.filter((x) => x.tax_id === p.tax_id && x.id !== p.id)
     if (others.length === 0) await supabase.from('house_taxes').delete().eq('id', p.tax_id)
@@ -191,7 +221,7 @@ export default function PiggyBank({ piggy = 'casa', expenses, incomes = [], fixe
           <div className="label">Saldo das reservas</div>
           <div className="value" style={{ color: balance < 0 ? 'var(--danger)' : 'var(--teal)', fontSize: 22 }}>{money(balance)}</div>
           <div className="meta" style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>
-            inicial {money(opening)} + aportes {money(aportes)} − pago {money(paidTotal)}
+            inicial {money(opening)} + aportes {money(aportes)} − retiradas {money(retiradas)}
           </div>
         </div>
         <div className="box">

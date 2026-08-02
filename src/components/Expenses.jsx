@@ -22,6 +22,13 @@ export default function Expenses(props) {
   const [payStatus, setPayStatus] = useState('Sim')
   const [toReserve, setToReserve] = useState(false)
   const [busy, setBusy] = useState(false)
+
+  // ---------- Retirada da reserva (reserva -> conta) ----------
+  const [wAmount, setWAmount] = useState('')
+  const [wPiggy, setWPiggy] = useState('casa')
+  const [wDate, setWDate] = useState(todayISO())
+  const [wToCC, setWToCC] = useState(true)
+  const [wBusy, setWBusy] = useState(false)
   const amountRef = useRef(null)
   const [editingExpId, setEditingExpId] = useState(null)
   const [flash, setFlash] = useState('')
@@ -58,6 +65,19 @@ export default function Expenses(props) {
     document.getElementById('gasto-form')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }
   const cancelExpEdit = () => { setEditingExpId(null); setPlace(''); setAmount(''); setPayStatus('Sim'); setToReserve(false) }
+
+  const withdrawReserve = async (e) => {
+    e.preventDefault()
+    const amt = parseAmount(wAmount)
+    if (!amt) return
+    setWBusy(true)
+    const person = wPiggy === 'nathi' ? 'Nathi' : 'Gui'
+    await supabase.from('expenses').insert({
+      date: wDate, amount: amt, description: 'Retirada da reserva', place: 'Reservas',
+      paid_by: person, pay_status: 'Sim', piggy: wPiggy, piggy_withdraw: true, to_cc: wToCC,
+    })
+    setWAmount(''); setWToCC(true); setWBusy(false); reload(); showFlash('Retirada da reserva registrada ✓')
+  }
   const removeExpense = async (id) => { await supabase.from('expenses').delete().eq('id', id); reload() }
 
   // ---------- Fixos do mes ----------
@@ -151,7 +171,7 @@ export default function Expenses(props) {
   const delAccount = async (id) => { await supabase.from('accounts').delete().eq('id', id); reload() }
 
   const nameOf = (e) => e.place || catById[e.category_id]?.name || ''
-  let variableExpenses = monthExpenses.filter((e) => !e.fixed_id && !e.piggy_deposit)
+  let variableExpenses = monthExpenses.filter((e) => !e.fixed_id && !e.piggy_deposit && !e.piggy_withdraw)
   if (fPerson) variableExpenses = variableExpenses.filter((e) => e.paid_by === fPerson)
   if (fAccount) variableExpenses = variableExpenses.filter((e) => (e.account || '') === fAccount)
   if (fCategory) variableExpenses = variableExpenses.filter((e) => e.category_id === fCategory)
@@ -222,6 +242,32 @@ export default function Expenses(props) {
             {editingExpId && <button type="button" className="btn btn-ghost" style={{ flex: 0, padding: '13px 16px' }} onClick={cancelExpEdit}>Cancelar</button>}
           </div>
           {flash && <div className="msg ok" style={{ marginTop: 10 }}>{flash}</div>}
+        </form>
+      </div>
+
+      {/* ---------- RETIRAR DA RESERVA ---------- */}
+      <div className="card">
+        <h2>Retirar da reserva</h2>
+        <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: -4 }}>
+          Tira dinheiro da poupança e devolve para a conta corrente (soma no Disponível). Não é um gasto.
+        </p>
+        <form onSubmit={withdrawReserve}>
+          <div className="row">
+            <div className="field"><label>Data</label>
+              <input type="date" value={wDate} onChange={(e) => setWDate(e.target.value)} required /></div>
+            <div className="field"><label>Valor (€)</label>
+              <input inputMode="decimal" value={wAmount} placeholder="0,00" onChange={(e) => setWAmount(e.target.value)} required /></div>
+          </div>
+          <div className="field"><label>De qual reserva</label>
+            <select value={wPiggy} onChange={(e) => setWPiggy(e.target.value)}>
+              <option value="casa">Casa (Gui)</option>
+              <option value="nathi">Nathi</option>
+            </select></div>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, marginBottom: 12 }}>
+            <input type="checkbox" checked={wToCC} onChange={(e) => setWToCC(e.target.checked)} />
+            Cai na conta corrente (soma no Disponível). Desmarque se for retirada externa.
+          </label>
+          <button className="btn" disabled={wBusy}>{wBusy ? 'Salvando…' : 'Registrar retirada'}</button>
         </form>
       </div>
 

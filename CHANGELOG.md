@@ -4,6 +4,14 @@ Versionamento semântico: MAJOR.MINOR.PATCH.
 
 ## Não lançado (pós-v1.0.0)
 ### Recursos
+- **Retirada da reserva** (reserva → conta corrente): novo movimento espelho do depósito.
+  Soma no Disponível e abate da reserva. Botão avulso na aba **Gastos** (com opção "cai na
+  conta corrente" para retiradas externas). Tabela: colunas `piggy_withdraw`, `to_cc`,
+  `tax_payment_id` em expenses — **migração 16**.
+- **Taxas da casa automáticas**: marcar **Pago** lança o gasto na conta corrente (−Disponível);
+  marcar **Transferido** faz a retirada da reserva (−Reserva, +Disponível). A reserva passa a
+  ser abatida pela retirada (não mais pelo "pago"). A migração 16 faz backfill dos pagamentos
+  já existentes para preservar os saldos.
 - **Ajuste manual do Disponível** (aba Entradas): por pessoa e por mês, corrige o Disponível
   para cima ou para baixo quando a realidade difere do calculado. Segue somando nos meses
   seguintes (modelo acumulado). Tabela `adjustments` — **migração 15**.

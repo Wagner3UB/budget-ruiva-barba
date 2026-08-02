@@ -84,6 +84,7 @@ Obs: nunca usar `git push -f` (uma vez achatou o histórico — não repetir).
 - **13** `migracao_13_categoria_fora_calculo.sql`: exclude_monthly em house_taxes.
 - **14** `migracao_14_deposito_externo.sql`: from_cc em expenses (depósito externo vs. da conta corrente).
 - **15** `migracao_15_ajustes_disponivel.sql`: tabela `adjustments` (person, month, amount, note; único por person+month) — ajuste manual do Disponível.
+- **16** `migracao_16_retirada_reserva.sql`: colunas `piggy_withdraw`, `to_cc`, `tax_payment_id` em expenses; backfill dos pagamentos de taxa existentes (gasto na conta + retirada).
 
 ## 5. Regras de negócio (decisões)
 ### Ciclo mensal — começa dia 10
@@ -104,6 +105,13 @@ entra no Disponível. Serve para reconciliar quando o valor real difere do calcu
 
 ### Quem paga — só Gui e Nathi
 O tipo "Casal" foi removido (era um erro). `WHO = ['Gui','Nathi']` em Expenses e ImportStatement.
+
+### Reserva ↔ conta corrente (depósito e retirada)
+Dois movimentos entre as "duas contas" (conta corrente = Disponível; reserva = poupança):
+- **Depósito** (conta → reserva): expense `piggy_deposit=true`. `from_cc=true` abate o Disponível; `false` = externo.
+- **Retirada** (reserva → conta): expense `piggy_withdraw=true`. `to_cc=true` credita o Disponível; `false` = externa (só abate a reserva).
+Reserva = inicial + aportes (to_reserve/piggy_deposit) − retiradas (piggy_withdraw). O "pago" da taxa NÃO abate mais a reserva.
+Taxa da casa (modelo automático): **Pago** cria um gasto na conta corrente (−Disponível, categoria Fixos Gui/Taxas Nathi, vinculado via `tax_payment_id`); **Transferido** cria a retirada (−Reserva, +Disponível). Desmarcar/excluir remove os lançamentos vinculados. Líquido de uma taxa paga+transferida: −Reserva e conta zerada.
 
 ### Pago? (pay_status)
 'Sim' (pago), 'Não' (a pagar), 'Não contabilizado' (não entra em nenhuma soma).
