@@ -77,41 +77,17 @@ export default function PiggyBank({ piggy = 'casa', expenses, incomes = [], fixe
     setOpenMsg(''); setEditOpen(false); setOpenVal(''); reload()
   }
 
+  // Taxas sao apenas planejamento: marcar Pago/Transferido NAO mexe na reserva.
+  // A reserva (= Salvadanaio) muda so por Deposito / Retirar da reserva.
   const togglePaid = async (p) => {
-    const willPay = !p.paid
     await supabase.from('tax_payments').update({
-      paid: willPay, paid_date: willPay ? todayISO() : null,
-      transferred: willPay ? p.transferred : false,
+      paid: !p.paid, paid_date: !p.paid ? todayISO() : null,
+      transferred: !p.paid ? p.transferred : false,
     }).eq('id', p.id)
-    const taxName = items.find((i) => i.id === p.tax_id)?.name || 'Taxa'
-    if (willPay) {
-      // marca pago = lança o gasto na conta corrente (abate Disponível)
-      const catId = await ensureDepositCategory()
-      await supabase.from('expenses').insert({
-        date: todayISO(), category_id: catId,
-        description: taxName, place: taxName, amount: Number(p.amount),
-        paid_by: person, pay_status: 'Sim', piggy, tax_payment_id: p.id,
-      })
-    } else {
-      // desmarcar pago remove o gasto e a retirada vinculados
-      await supabase.from('expenses').delete().eq('tax_payment_id', p.id)
-    }
     reload()
   }
   const toggleTransferred = async (p) => {
-    const willTransfer = !p.transferred
-    await supabase.from('tax_payments').update({ transferred: willTransfer }).eq('id', p.id)
-    const taxName = items.find((i) => i.id === p.tax_id)?.name || 'Taxa'
-    if (willTransfer) {
-      // transferido = retirada da reserva que cai na conta (abate reserva, credita Disponível)
-      await supabase.from('expenses').insert({
-        date: todayISO(), amount: Number(p.amount),
-        description: `Retirada reserva: ${taxName}`, place: 'Reservas',
-        paid_by: person, pay_status: 'Sim', piggy, piggy_withdraw: true, to_cc: true, tax_payment_id: p.id,
-      })
-    } else {
-      await supabase.from('expenses').delete().eq('tax_payment_id', p.id).eq('piggy_withdraw', true)
-    }
+    await supabase.from('tax_payments').update({ transferred: !p.transferred }).eq('id', p.id)
     reload()
   }
   const toggleTaxExclude = async (it) => {
