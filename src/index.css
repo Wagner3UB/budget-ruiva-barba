@@ -492,6 +492,17 @@ html, body { overflow-x: hidden; }
 .login-logo-color { width: 108px; height: auto; display: block; margin: 0 auto 8px; }
 
 
+/* ============ Foco acessível: anel duplo (externo branco, interno preto) ============ */
+/* Cores fixas de propósito: o mesmo modelo vale para tema claro e escuro e o foco
+   fica visível em qualquer fundo (o branco aparece no escuro, o preto aparece no claro). */
+:focus-visible {
+  outline: 2px solid #fff;      /* anel externo branco (via outline) */
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px #000;   /* anel interno preto (via border/box-shadow) */
+}
+/* nada de anel quando o foco vem de clique/toque (só teclado dispara :focus-visible) */
+:focus:not(:focus-visible) { outline: none; }
+
 /* ============ Botão voltar ao topo ============ */
 .scrolltop {
   position: fixed; right: 16px; bottom: 16px; z-index: 200;
