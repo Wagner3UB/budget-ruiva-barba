@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import * as XLSX from 'xlsx'
 import { supabase } from '../supabaseClient'
 import { money, fmtDate } from '../lib/helpers'
@@ -101,6 +101,9 @@ export default function ImportStatement({ categories, accounts, expenses, income
   const [person, setPerson] = useState('Gui')
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState('')
+  const [popup, setPopup] = useState(null)     // { type:'ok'|'err', text }
+  const [flashId, setFlashId] = useState(null)  // linha com campo a corrigir
+  const accountSelRef = useRef(null)
 
   const catByName = useMemo(() => {
     const m = {}; for (const c of categories) m[c.name.toLowerCase()] = c; return m
@@ -202,11 +205,30 @@ export default function ImportStatement({ categories, accounts, expenses, income
     return data?.id || null
   }
 
+  const focusRow = (id) => {
+    setFlashId(id)
+    setTimeout(() => {
+      const el = document.getElementById('cat-' + id)
+      el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      el?.focus()
+    }, 60)
+  }
+
   const doImport = async () => {
+    if (!account) {
+      setPopup({ type: 'err', text: 'Selecione a conta / banco (no topo da tela) antes de importar.' })
+      accountSelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      setTimeout(() => accountSelRef.current?.focus(), 60)
+      return
+    }
     const sel = rows.filter((r) => r.include && r.type !== 'ignorar')
-    if (!sel.length) { setMsg('Nada selecionado para importar.'); return }
+    if (!sel.length) { setPopup({ type: 'err', text: 'Nada selecionado para importar.' }); return }
     const semCat = sel.filter((r) => r.type === 'gasto' && !r.categoryId)
-    if (semCat.length) { setMsg(`Defina a categoria dos gastos selecionados (${semCat.length} sem categoria).`); return }
+    if (semCat.length) {
+      setPopup({ type: 'err', text: `Há ${semCat.length} gasto(s) selecionado(s) sem categoria. Defina a categoria do item destacado e tente de novo.` })
+      focusRow(semCat[0].id)
+      return
+    }
     setBusy(true)
     const exp = [], inc = []
     for (const r of sel) {
@@ -225,9 +247,9 @@ export default function ImportStatement({ categories, accounts, expenses, income
     if (exp.length) { const { error } = await supabase.from('expenses').insert(exp); err = err || error }
     if (inc.length) { const { error } = await supabase.from('incomes').insert(inc); err = err || error }
     setBusy(false)
-    if (err) { setMsg('Erro ao importar: ' + err.message); return }
-    setMsg(`Importado: ${exp.length} gasto(s) e ${inc.length} entrada(s).`)
-    setRows([]); reload()
+    if (err) { setPopup({ type: 'err', text: 'Erro ao salvar os dados: ' + err.message }); return }
+    setPopup({ type: 'ok', text: `Seus dados foram salvos com sucesso — ${exp.length} gasto(s) e ${inc.length} entrada(s).` })
+    setMsg(''); setRows([]); reload()
   }
 
   const TYPES = ['gasto', 'entrada', 'reserva', 'ignorar']
@@ -254,7 +276,8 @@ export default function ImportStatement({ categories, accounts, expenses, income
               {TYPES.map((t) => <option key={t}>{t}</option>)}
             </select>
             {r.type === 'gasto' && (
-              <select value={r.categoryId} onChange={(e) => upd(r.id, { categoryId: e.target.value })}
+              <select id={`cat-${r.id}`} className={flashId === r.id ? 'flash-error' : ''}
+                value={r.categoryId} onChange={(e) => { upd(r.id, { categoryId: e.target.value }); if (flashId === r.id) setFlashId(null) }}
                 style={{ fontSize: 12, border: `1px solid ${r.include && !r.categoryId ? 'var(--danger)' : 'var(--border)'}`, borderRadius: 6, padding: '1px 4px' }}>
                 <option value="">categoria…</option>
                 {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -296,7 +319,7 @@ export default function ImportStatement({ categories, accounts, expenses, income
           </p>
           <div className="row">
             <div className="field"><label>Conta / Banco</label>
-              <select value={account} onChange={(e) => setAccount(e.target.value)}>
+              <select ref={accountSelRef} value={account} onChange={(e) => setAccount(e.target.value)}>
                 <option value="">Selecione…</option>
                 {accounts.map((a) => <option key={a.id} value={a.name}>{a.name}</option>)}
               </select></div>
@@ -340,6 +363,16 @@ export default function ImportStatement({ categories, accounts, expenses, income
             </button>
           </div>
         </div>
+        </div>
+      )}
+
+      {popup && (
+        <div className="popup-overlay" onClick={() => setPopup(null)}>
+          <div className={`popup ${popup.type}`} onClick={(e) => e.stopPropagation()}>
+            <div className="popup-icon">{popup.type === 'ok' ? '✓' : '!'}</div>
+            <p>{popup.text}</p>
+            <button className="btn" autoFocus onClick={() => setPopup(null)}>OK</button>
+          </div>
         </div>
       )}
     </>
