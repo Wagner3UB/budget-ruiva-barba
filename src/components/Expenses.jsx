@@ -163,6 +163,10 @@ export default function Expenses(props) {
   const [fAccount, setFAccount] = useState('')
   const [sortBy, setSortBy] = useState('data')
   const [fCategory, setFCategory] = useState('')
+  // calculadora de seleção
+  const [calcOpen, setCalcOpen] = useState(false)
+  const [calcSel, setCalcSel] = useState([])
+  const toggleCalc = (k) => setCalcSel((s) => (s.includes(k) ? s.filter((x) => x !== k) : [...s, k]))
   const addAccount = async (e) => {
     e.preventDefault()
     if (!newAcc.trim()) return
@@ -199,6 +203,23 @@ export default function Expenses(props) {
     .reduce((s, f) => s + Number(f.amount), 0)
 
   const monthAdj = (props.adjustments || []).filter((a) => a.month === month && Number(a.amount) !== 0)
+
+  // ---------- Calculadora: itens selecionáveis (fixos + avulsos do mês) ----------
+  const calcItems = [
+    ...monthFixed.map((f) => ({
+      key: 'fix-' + f.id, tag: 'fixo',
+      label: f.description || catById[f.category_id]?.name || 'Fixo',
+      amount: Number(paidFixedThisMonth[f.id]?.amount ?? f.amount) || 0,
+    })),
+    ...monthExpenses
+      .filter((e) => !e.fixed_id && !e.piggy_deposit && !e.piggy_withdraw)
+      .map((e) => ({
+        key: 'avu-' + e.id, tag: 'avulso',
+        label: e.place || catById[e.category_id]?.name || 'Gasto',
+        amount: Number(e.amount) || 0,
+      })),
+  ]
+  const calcTotal = calcItems.filter((it) => calcSel.includes(it.key)).reduce((s, it) => s + it.amount, 0)
 
   return (
     <>
@@ -456,6 +477,41 @@ export default function Expenses(props) {
           </div>
         )}
         <div className="meta" style={{ marginTop: 6 }}>{variableExpenses.length} avulso(s) · {monthFixedFiltered.length} fixo(s)</div>
+      </div>
+
+      {/* ---------- CALCULADORA DE SELEÇÃO ---------- */}
+      <div className="card">
+        <h2 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          Calculadora
+          <button className="btn btn-sm btn-ghost" onClick={() => setCalcOpen((v) => !v)}>{calcOpen ? 'fechar' : 'abrir'}</button>
+        </h2>
+        {calcOpen && (
+          <>
+            <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: -4 }}>
+              Marque itens (fixos ou avulsos) do mês para somar. Não altera nada — é só uma conta rápida.
+            </p>
+            <div style={{ maxHeight: 320, overflowY: 'auto' }}>
+              {calcItems.length === 0 ? <div className="empty">Nenhum item neste mês.</div> : calcItems.map((it) => (
+                <label className="item" key={it.key} style={{ cursor: 'pointer' }}>
+                  <span className="info" style={{ gap: 8 }}>
+                    <input type="checkbox" checked={calcSel.includes(it.key)} onChange={() => toggleCalc(it.key)} />
+                    <span className="desc">{it.label}
+                      <span className="tag" style={{ marginLeft: 6, background: it.tag === 'fixo' ? '#e0e7ff' : '#e1f5ee', color: it.tag === 'fixo' ? '#3730a3' : '#0f6e56' }}>{it.tag}</span>
+                    </span>
+                  </span>
+                  <span className="amt">{money(it.amount)}</span>
+                </label>
+              ))}
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border)', marginTop: 10, paddingTop: 10 }}>
+              <b>Total selecionado ({calcSel.length})</b>
+              <b style={{ color: 'var(--teal)', fontSize: 20 }}>{money(calcTotal)}</b>
+            </div>
+            {calcSel.length > 0 && (
+              <button className="btn btn-sm btn-ghost" style={{ marginTop: 10 }} onClick={() => setCalcSel([])}>limpar seleção</button>
+            )}
+          </>
+        )}
       </div>
     </>
   )
