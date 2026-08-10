@@ -77,17 +77,30 @@ export default function PiggyBank({ piggy = 'casa', expenses, incomes = [], fixe
     setOpenMsg(''); setEditOpen(false); setOpenVal(''); reload()
   }
 
-  // Taxas sao apenas planejamento: marcar Pago/Transferido NAO mexe na reserva.
-  // A reserva (= Salvadanaio) muda so por Deposito / Retirar da reserva.
+  // "Pago" = só status. "Transferido" = retirada reversível (reserva -> conta):
+  // marcar tira da reserva e soma no Disponível; desmarcar devolve (apaga a retirada).
   const togglePaid = async (p) => {
+    const willPay = !p.paid
     await supabase.from('tax_payments').update({
-      paid: !p.paid, paid_date: !p.paid ? todayISO() : null,
-      transferred: !p.paid ? p.transferred : false,
+      paid: willPay, paid_date: willPay ? todayISO() : null,
+      transferred: willPay ? p.transferred : false,
     }).eq('id', p.id)
+    if (!willPay) await supabase.from('expenses').delete().eq('tax_payment_id', p.id).eq('piggy_withdraw', true)
     reload()
   }
   const toggleTransferred = async (p) => {
-    await supabase.from('tax_payments').update({ transferred: !p.transferred }).eq('id', p.id)
+    const willTransfer = !p.transferred
+    await supabase.from('tax_payments').update({ transferred: willTransfer }).eq('id', p.id)
+    const taxName = items.find((i) => i.id === p.tax_id)?.name || 'Taxa'
+    if (willTransfer) {
+      await supabase.from('expenses').insert({
+        date: todayISO(), amount: Number(p.amount),
+        description: `Retirada reserva: ${taxName}`, place: 'Reservas',
+        paid_by: person, pay_status: 'Sim', piggy, piggy_withdraw: true, to_cc: true, tax_payment_id: p.id,
+      })
+    } else {
+      await supabase.from('expenses').delete().eq('tax_payment_id', p.id).eq('piggy_withdraw', true)
+    }
     reload()
   }
   const toggleTaxExclude = async (it) => {
