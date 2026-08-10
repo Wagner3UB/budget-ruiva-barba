@@ -166,6 +166,7 @@ export default function Expenses(props) {
   // calculadora de seleção
   const [calcOpen, setCalcOpen] = useState(false)
   const [calcSel, setCalcSel] = useState([])
+  const [calcQuery, setCalcQuery] = useState('')
   const toggleCalc = (k) => setCalcSel((s) => (s.includes(k) ? s.filter((x) => x !== k) : [...s, k]))
   const addAccount = async (e) => {
     e.preventDefault()
@@ -219,7 +220,12 @@ export default function Expenses(props) {
         amount: Number(e.amount) || 0,
       })),
   ]
-  const calcTotal = calcItems.filter((it) => calcSel.includes(it.key)).reduce((s, it) => s + it.amount, 0)
+  const calcSelected = calcItems.filter((it) => calcSel.includes(it.key))
+  const calcTotal = calcSelected.reduce((s, it) => s + it.amount, 0)
+  const calcQ = calcQuery.trim().toLowerCase()
+  const calcSuggest = calcQ
+    ? calcItems.filter((it) => !calcSel.includes(it.key) && it.label.toLowerCase().includes(calcQ)).slice(0, 8)
+    : []
 
   return (
     <>
@@ -488,27 +494,44 @@ export default function Expenses(props) {
         {calcOpen && (
           <>
             <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: -4 }}>
-              Marque itens (fixos ou avulsos) do mês para somar. Não altera nada — é só uma conta rápida.
+              Pesquise e adicione itens (fixos ou avulsos) do mês, um a um, para somar. Não altera nada.
             </p>
-            <div style={{ maxHeight: 320, overflowY: 'auto' }}>
-              {calcItems.length === 0 ? <div className="empty">Nenhum item neste mês.</div> : calcItems.map((it) => (
-                <label className="item" key={it.key} style={{ cursor: 'pointer' }}>
-                  <span className="info" style={{ gap: 8 }}>
-                    <input type="checkbox" checked={calcSel.includes(it.key)} onChange={() => toggleCalc(it.key)} />
-                    <span className="desc">{it.label}
-                      <span className="tag" style={{ marginLeft: 6, background: it.tag === 'fixo' ? '#e0e7ff' : '#e1f5ee', color: it.tag === 'fixo' ? '#3730a3' : '#0f6e56' }}>{it.tag}</span>
-                    </span>
+            <div style={{ position: 'relative' }}>
+              <input value={calcQuery} onChange={(e) => setCalcQuery(e.target.value)} placeholder="Pesquisar item… (ex: Internet, Hera)"
+                style={{ width: '100%', padding: 10, border: '1px solid var(--border)', borderRadius: 10, boxSizing: 'border-box' }} />
+              {calcSuggest.length > 0 && (
+                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 5, background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, marginTop: 4, boxShadow: '0 8px 24px rgba(0,0,0,.25)', overflow: 'hidden' }}>
+                  {calcSuggest.map((it) => (
+                    <button key={it.key} type="button" onClick={() => { toggleCalc(it.key); setCalcQuery('') }}
+                      style={{ display: 'flex', width: '100%', justifyContent: 'space-between', alignItems: 'center', gap: 8, padding: '9px 12px', background: 'transparent', border: 'none', borderBottom: '1px solid var(--border)', cursor: 'pointer', color: 'var(--text)', textAlign: 'left' }}>
+                      <span>{it.label}
+                        <span className="tag" style={{ marginLeft: 6, background: it.tag === 'fixo' ? '#e0e7ff' : '#e1f5ee', color: it.tag === 'fixo' ? '#3730a3' : '#0f6e56' }}>{it.tag}</span>
+                      </span>
+                      <span className="amt">{money(it.amount)}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div style={{ marginTop: 12 }}>
+              {calcSelected.length === 0 ? <div className="empty">Nenhum item adicionado ainda.</div> : calcSelected.map((it) => (
+                <div className="item" key={it.key}>
+                  <span className="desc">{it.label}
+                    <span className="tag" style={{ marginLeft: 6, background: it.tag === 'fixo' ? '#e0e7ff' : '#e1f5ee', color: it.tag === 'fixo' ? '#3730a3' : '#0f6e56' }}>{it.tag}</span>
                   </span>
-                  <span className="amt">{money(it.amount)}</span>
-                </label>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span className="amt">{money(it.amount)}</span>
+                    <button className="x" title="remover" onClick={() => toggleCalc(it.key)}><IconTrash /></button>
+                  </span>
+                </div>
               ))}
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border)', marginTop: 10, paddingTop: 10 }}>
-              <b>Total selecionado ({calcSel.length})</b>
+              <b>Total ({calcSelected.length})</b>
               <b style={{ color: 'var(--teal)', fontSize: 20 }}>{money(calcTotal)}</b>
             </div>
-            {calcSel.length > 0 && (
-              <button className="btn btn-sm btn-ghost" style={{ marginTop: 10 }} onClick={() => setCalcSel([])}>limpar seleção</button>
+            {calcSelected.length > 0 && (
+              <button className="btn btn-sm btn-ghost" style={{ marginTop: 10 }} onClick={() => { setCalcSel([]); setCalcQuery('') }}>limpar</button>
             )}
           </>
         )}
