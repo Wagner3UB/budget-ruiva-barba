@@ -488,7 +488,7 @@ export default function Expenses(props) {
       {/* ---------- CALCULADORA DE SELEÇÃO ---------- */}
       <div className="card">
         <h2 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          Calculadora
+          Must have - ING Gui
           <button className="btn btn-sm btn-ghost" onClick={() => setCalcOpen((v) => !v)}>{calcOpen ? 'fechar' : 'abrir'}</button>
         </h2>
         {calcOpen && (
