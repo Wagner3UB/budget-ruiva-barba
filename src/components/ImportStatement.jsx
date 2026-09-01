@@ -196,7 +196,11 @@ export default function ImportStatement({ categories, accounts, expenses, income
   }
 
   const upd = (id, patch) => setRows((rs) => rs.map((r) => (r.id === id ? { ...r, ...patch } : r)))
-  const setMany = (list, val) => { const ids = new Set(list.map((r) => r.id)); setRows((rs) => rs.map((r) => (ids.has(r.id) ? { ...r, include: val } : r))) }
+  // "selecionar todos" NUNCA marca duplicados (nem transferências/ignorados) — só desmarca todos.
+  const setMany = (list, val) => {
+    const ids = new Set(list.map((r) => r.id))
+    setRows((rs) => rs.map((r) => (ids.has(r.id) ? { ...r, include: val ? (!r.dup && r.type !== 'ignorar') : false } : r)))
+  }
 
   const ensureCat = async (name) => {
     const f = categories.find((c) => c.name.toLowerCase() === name.toLowerCase())
@@ -337,7 +341,7 @@ export default function ImportStatement({ categories, accounts, expenses, income
           <div className="import-cols">
             <div className="import-col">
               <h3 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <input type="checkbox" checked={saidas.length > 0 && saidas.every((r) => r.include)}
+                <input type="checkbox" checked={saidas.some((r) => r.include) && saidas.filter((r) => !r.dup && r.type !== 'ignorar').every((r) => r.include)}
                   onChange={(e) => setMany(saidas, e.target.checked)} /> Saídas ({saidas.length})
               </h3>
               <div className="import-col-scroll">
@@ -346,7 +350,7 @@ export default function ImportStatement({ categories, accounts, expenses, income
             </div>
             <div className="import-col">
               <h3 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <input type="checkbox" checked={entradas.length > 0 && entradas.every((r) => r.include)}
+                <input type="checkbox" checked={entradas.some((r) => r.include) && entradas.filter((r) => !r.dup && r.type !== 'ignorar').every((r) => r.include)}
                   onChange={(e) => setMany(entradas, e.target.checked)} /> Entradas ({entradas.length})
               </h3>
               <div className="import-col-scroll">
