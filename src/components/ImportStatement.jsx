@@ -148,10 +148,12 @@ export default function ImportStatement({ categories, accounts, expenses, income
       const ing = low.some((h) => h.includes('uscite')) && low.some((h) => h.includes('entrate'))
       return bbva || ing
     })
-    if (hi < 0) { setMsg('Não reconheci o formato do extrato (BBVA ou ING).'); return }
+    if (hi < 0) { setMsg('Não reconheci o formato do extrato (BBVA, ING ou poupança).'); return }
     const head = data[hi].map((c) => String(c).toLowerCase())
     const col = (name) => head.findIndex((h) => h.includes(name))
     const isING = head.some((h) => h.includes('uscite'))
+    // Extrato da POUPANÇA (formato "Movimenti": tem coluna Beneficiario) — só transferências de/para a cc
+    const isPoupanca = head.some((h) => h.includes('beneficiario'))
     const parsed = []
     const localMap = {}
     for (const k in existByAmount) localMap[k] = [...existByAmount[k]]
@@ -164,7 +166,14 @@ export default function ImportStatement({ categories, accounts, expenses, income
       const row = data[r]
       if (!row || row.every((c) => c === '' || c == null)) continue
       let date, amount, merchant, text
-      if (isING) {
+      if (isPoupanca) {
+        amount = parseImporto(row[col('importo')])
+        date = toISO(row[col('data valuta')] !== '' ? row[col('data valuta')] : row[col('data')])
+        const nota = row[col('movimento')]           // ex: "BOLLO TAIGO 2026", "FIXO JUNHO"
+        const causale = row[col('causale')]           // "TRASFERIMENTO SU/DA CONTO"
+        merchant = String(nota || causale || '').trim()
+        text = `${causale} ${nota}`
+      } else if (isING) {
         const uscite = parseImporto(row[col('uscite')])
         const entrate = parseImporto(row[col('entrate')])
         amount = uscite ? uscite : entrate
@@ -181,8 +190,9 @@ export default function ImportStatement({ categories, accounts, expenses, income
         text = `${row[mCol]} ${row[col('movimento')]}`
       }
       if (!amount || !date) continue
-      const type = classify(text, amount, ownIbans)
-      const transfer = type === 'ignorar' && isTransferText(text, ownIbans)
+      // poupança: + = depósito (cc->poupança), - = retirada (poupança->cc)
+      const type = isPoupanca ? (amount < 0 ? 'retirada' : 'deposito') : classify(text, amount, ownIbans)
+      const transfer = !isPoupanca && type === 'ignorar' && isTransferText(text, ownIbans)
       const dup = isDup(amount, date)
       const k = Math.abs(amount).toFixed(2)
       ;(localMap[k] = localMap[k] || []).push(date)
@@ -235,9 +245,22 @@ export default function ImportStatement({ categories, accounts, expenses, income
     }
     setBusy(true)
     const exp = [], inc = []
+    const piggy = person === 'Nathi' ? 'nathi' : 'casa'
     for (const r of sel) {
       if (r.type === 'entrada') {
         inc.push({ month: r.date.slice(0, 7), date: r.date, person, description: r.desc || 'Entrada', amount: Math.abs(r.amount) })
+      } else if (r.type === 'deposito') {
+        // poupança: cc -> poupança (abate Disponível, soma na reserva)
+        exp.push({
+          date: r.date, description: r.desc, place: r.desc, amount: Math.abs(r.amount),
+          paid_by: person, pay_status: 'Sim', piggy, piggy_deposit: true, from_cc: true,
+        })
+      } else if (r.type === 'retirada') {
+        // poupança -> cc (soma no Disponível, abate a reserva)
+        exp.push({
+          date: r.date, description: r.desc, place: r.desc, amount: Math.abs(r.amount),
+          paid_by: person, pay_status: 'Sim', piggy, piggy_withdraw: true, to_cc: true,
+        })
       } else {
         let catId = r.categoryId
         if (r.type === 'reserva') catId = await ensureCat(person === 'Nathi' ? 'Taxas Nathi' : 'Fixos Gui')
@@ -256,7 +279,7 @@ export default function ImportStatement({ categories, accounts, expenses, income
     setMsg(''); setRows([]); reload()
   }
 
-  const TYPES = ['gasto', 'entrada', 'reserva', 'ignorar']
+  const TYPES = ['gasto', 'entrada', 'deposito', 'retirada', 'reserva', 'ignorar']
   const nInc = rows.filter((r) => r.include && r.type !== 'ignorar').length
   const needCat = rows.some((r) => r.include && r.type === 'gasto' && !r.categoryId)
   const saidas = rows.filter((r) => r.amount < 0)
@@ -301,8 +324,9 @@ export default function ImportStatement({ categories, accounts, expenses, income
       <div className="card">
         <h2>Importar extrato do banco</h2>
         <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: -4 }}>
-          Aceita extratos do <b>BBVA</b> (.xlsx) e do <b>ING</b> (.csv). O app identifica tipo, categoria,
-          data e valor. Revise e confirme. Movimentos já lançados aparecem como duplicados.
+          Aceita extratos do <b>BBVA</b> (.xlsx), <b>ING</b> (.csv) e da <b>poupança</b> (Movimenti). O app identifica
+          tipo, categoria, data e valor. Na poupança: <b>+ = depósito</b> (cc→poupança), <b>− = retirada</b> (poupança→cc).
+          Revise e confirme. Movimentos já lançados aparecem como duplicados.
         </p>
         <div className="field">
           <label>Arquivo do extrato</label>
