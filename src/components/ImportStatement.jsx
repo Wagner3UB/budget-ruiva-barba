@@ -8,24 +8,24 @@ const WHO = ['Gui', 'Nathi']
 
 // Regras de categorização por palavra-chave no texto do movimento
 const CAT_RULES = [
-  [/penny|md ferrara|\bmd\b|coop|conad|lidl|carrefour|eurospin|\baldi\b|esselunga|mercat|supermerc/i, 'Mercado'],
+  [/penny|md ferrara|\bmd\b|coop|conad|lidl|carrefour|eurospin|\baldi\b|esselunga|mercat|supermerc|aspiag|despar|tosano|dispensa|iper mura|famila|interspar/i, 'Mercados'],
   [/amazon|amzn/i, 'Amazon'],
   [/farmacia|farmácia/i, 'Farmácia'],
   [/ristorant|pizz|\bbar\b|pasticc|gelateri|strabar|atlantic|gusto|glovo|deliveroo|just eat|mc ?donald|burger/i, 'Restaurante'],
   [/affitto/i, 'Aluguel'],
   [/condominio|condomínio/i, 'Condomínio'],
   [/\bhera\b/i, 'Hera'],
-  [/volkswagen|installment|payment loan/i, 'Carro parcela'],
+  [/volkswagen|installment|payment loan/i, 'Carro - Parcela'],
   [/worldpay|instant ink|hp inc/i, 'HP'],
   [/wind|vodafone|\btim\b|iliad|fastweb/i, 'Internet'],
-  [/q8|\beni\b|agip|tamoil|esso|benzin|carburant|distributore/i, 'Carro gasolina'],
+  [/q8|\beni\b|agip|tamoil|esso|benzin|carburant|distributore|vega carburanti/i, 'Carro - Gasolina'],
   [/trenital|italo|autostrad|pedagi|telepass|airbnb|booking|ryanair|easyjet|flixbus/i, 'Viagens'],
   [/palestr|\bgym\b|\bfit\b|academ/i, 'Academia'],
-  [/netflix|spotify|disney|prime video|\bhbo\b|dazn/i, 'Extra'],
+  [/netflix|spotify|disney|prime video|\bhbo\b|dazn/i, 'Extras'],
 ]
 const guessCategory = (text) => {
   for (const [re, name] of CAT_RULES) if (re.test(text)) return name
-  return 'Extra'
+  return 'Extras'
 }
 
 const parseImporto = (v) => {
