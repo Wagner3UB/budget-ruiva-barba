@@ -57,10 +57,6 @@ export default function PiggyBank({ piggy = 'casa', expenses, incomes = [], fixe
     .reduce((s, e) => s + Number(e.amount), 0)
   const balance = opening + aportes - retiradas
 
-  const pendingTransfers = payments
-    .filter((p) => p.paid && !p.transferred)
-    .map((p) => ({ ...p, name: items.find((i) => i.id === p.tax_id)?.name }))
-
   // ---------- acoes ----------
   const [editOpen, setEditOpen] = useState(false)
   const [openVal, setOpenVal] = useState('')
@@ -77,30 +73,12 @@ export default function PiggyBank({ piggy = 'casa', expenses, incomes = [], fixe
     setOpenMsg(''); setEditOpen(false); setOpenVal(''); reload()
   }
 
-  // "Pago" = só status. "Transferido" = retirada reversível (reserva -> conta):
-  // marcar tira da reserva e soma no Disponível; desmarcar devolve (apaga a retirada).
+  // Calendario = so PLANEJAMENTO. Marcar "Pago" e apenas um check (nao mexe em saldo).
+  // Quem move dinheiro e o banco (import + fecho mensal), nunca este botao.
   const togglePaid = async (p) => {
-    const willPay = !p.paid
     await supabase.from('tax_payments').update({
-      paid: willPay, paid_date: willPay ? todayISO() : null,
-      transferred: willPay ? p.transferred : false,
+      paid: !p.paid, paid_date: !p.paid ? todayISO() : null,
     }).eq('id', p.id)
-    if (!willPay) await supabase.from('expenses').delete().eq('tax_payment_id', p.id).eq('piggy_withdraw', true)
-    reload()
-  }
-  const toggleTransferred = async (p) => {
-    const willTransfer = !p.transferred
-    await supabase.from('tax_payments').update({ transferred: willTransfer }).eq('id', p.id)
-    const taxName = items.find((i) => i.id === p.tax_id)?.name || 'Taxa'
-    if (willTransfer) {
-      await supabase.from('expenses').insert({
-        date: todayISO(), amount: Number(p.amount),
-        description: `Retirada reserva: ${taxName}`, place: 'Reservas',
-        paid_by: person, pay_status: 'Sim', piggy, piggy_withdraw: true, to_cc: true, tax_payment_id: p.id,
-      })
-    } else {
-      await supabase.from('expenses').delete().eq('tax_payment_id', p.id).eq('piggy_withdraw', true)
-    }
     reload()
   }
   const toggleTaxExclude = async (it) => {
@@ -220,20 +198,6 @@ export default function PiggyBank({ piggy = 'casa', expenses, incomes = [], fixe
         </div>
       </div>
 
-      {pendingTransfers.length > 0 && (
-        <div className="warn-banner">
-          🔔 Transferências pendentes (reservas → conta):
-          <div style={{ marginTop: 8 }}>
-            {pendingTransfers.map((p) => (
-              <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
-                <span>{p.name} ({MESES[p.month - 1]}) — <b>{money(p.amount)}</b></span>
-                <button className="btn btn-sm" onClick={() => toggleTransferred(p)}>já transferi ✓</button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* ---------- MATRIZ DE VENCIMENTOS ---------- */}
       <div className="card wide">
         <h2>Calendário de vencimentos {year}</h2>
@@ -256,7 +220,7 @@ export default function PiggyBank({ piggy = 'casa', expenses, incomes = [], fixe
                     {MESES.map((m, idx) => {
                       const p = payMap[it.id]?.[idx + 1]
                       if (!p) return <td key={m} className="cell" />
-                      const cls = p.paid ? (p.transferred ? 'cell has paid' : 'cell has pend') : 'cell has'
+                      const cls = p.paid ? 'cell has paid' : 'cell has'
                       return (
                         <td key={m} className={cls}
                           title={p.paid ? 'pago (toque p/ desmarcar)' : 'toque p/ marcar pago'}
@@ -281,7 +245,7 @@ export default function PiggyBank({ piggy = 'casa', expenses, incomes = [], fixe
           </div>
         )}
         <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 10 }}>
-          Toque numa célula para marcar/desmarcar como <b>paga</b>. Verde = paga e transferida · amarelo = paga, transferência pendente.
+          Toque numa célula para marcar/desmarcar como <b>paga</b> (verde). É só planejamento — não mexe em saldo. Quem move dinheiro é o banco (importação + fecho mensal).
         </p>
       </div>
 
@@ -335,11 +299,6 @@ export default function PiggyBank({ piggy = 'casa', expenses, incomes = [], fixe
                         {p.note && <div className="meta">{p.note}</div>}
                       </div>
                       <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                        {p.paid && (
-                          <button className="icon-btn"
-                            style={{ color: p.transferred ? 'var(--green)' : '#3b82f6', fontWeight: 600, fontSize: 13 }}
-                            onClick={() => toggleTransferred(p)}>{p.transferred ? 'transferido' : 'transferir'}</button>
-                        )}
                         <button className="icon-btn" title="editar" onClick={() => editPayment(p)}><IconEdit /></button>
                         <button className="icon-btn" title={p.paid ? 'pago — clique p/ desmarcar' : 'a pagar — clique p/ marcar'}
                           style={{ color: p.paid ? 'var(--green)' : 'var(--danger)', fontWeight: 800, fontSize: 18 }}
