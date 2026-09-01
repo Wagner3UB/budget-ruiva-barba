@@ -336,8 +336,8 @@ export default function ImportStatement({ categories, accounts, expenses, income
       </div>
 
       {rows.length > 0 && (
-        <div className="modal-overlay" onClick={() => setRows([])}>
-        <div className="modal import-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-overlay">
+        <div className="modal import-modal">
           <div className="modal-head">
             <h2 style={{ margin: 0 }}>Revisar importação ({rows.length})</h2>
             <button className="icon-btn" title="fechar" onClick={() => setRows([])}><IconClose size={18} /></button>
