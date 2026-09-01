@@ -109,6 +109,21 @@ export default function ImportStatement({ categories, accounts, expenses, income
     const m = {}; for (const c of categories) m[c.name.toLowerCase()] = c; return m
   }, [categories])
   const matchCat = (name) => catByName[name.toLowerCase()]?.id || ''
+  // palavras-chave definidas por você (aba Ajustes) — têm prioridade sobre as regras padrão
+  const catKeywords = useMemo(() => {
+    const list = []
+    for (const c of categories) {
+      for (const kw of String(c.keywords || '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean)) {
+        list.push([kw, c.id])
+      }
+    }
+    return list
+  }, [categories])
+  const matchCatByText = (text) => {
+    const t = String(text).toLowerCase()
+    for (const [kw, id] of catKeywords) if (t.includes(kw)) return id
+    return matchCat(guessCategory(text)) // fallback nas regras padrão embutidas
+  }
 
   // IBANs das contas próprias (p/ detectar transferência interna)
   const ownIbans = useMemo(
@@ -198,7 +213,7 @@ export default function ImportStatement({ categories, accounts, expenses, income
       ;(localMap[k] = localMap[k] || []).push(date)
       parsed.push({
         id: `${r}`, date, desc: merchant || text.trim().slice(0, 40), amount, type, transfer,
-        categoryId: matchCat(guessCategory(text)), include: type !== 'ignorar' && !dup, dup,
+        categoryId: matchCatByText(text), include: type !== 'ignorar' && !dup, dup,
       })
     }
     setRows(parsed)

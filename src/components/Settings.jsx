@@ -20,6 +20,7 @@ export default function Settings({ categories, accounts, reload, theme, setTheme
     if (name.trim() && name.trim() !== c.name) { await supabase.from('categories').update({ name: name.trim() }).eq('id', c.id); reload() }
   }
   const delCat = async (id) => { await supabase.from('categories').delete().eq('id', id); reload() }
+  const updateCat = async (c, patch) => { await supabase.from('categories').update(patch).eq('id', c.id); reload() }
 
   const addAcc = async (e) => {
     e.preventDefault()
@@ -57,16 +58,23 @@ export default function Settings({ categories, accounts, reload, theme, setTheme
       <div className="card">
         <h2>Categorias ({categories.length})</h2>
         <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: -4 }}>
-          Toque no nome para renomear. Excluir uma categoria não apaga os gastos — eles ficam sem categoria.
+          Toque no nome para renomear. Em <b>identificar por</b>, liste palavras (separadas por vírgula) que a
+          importação usa pra reconhecer o comerciante automaticamente — ex.: <i>penny, conad, aspiag</i>. Excluir
+          uma categoria não apaga os gastos.
         </p>
         {categories.map((c) => (
-          <div className="item" key={c.id}>
-            <span className="info" style={{ gap: 8 }}>
-              <span className="dot" style={{ background: c.color || '#94a3b8' }} />
-              <input defaultValue={c.name} onBlur={(e) => renameCat(c, e.target.value)}
-                style={{ border: 'none', borderBottom: '1px solid var(--border)', background: 'transparent', fontSize: 15, width: 180 }} />
-            </span>
-            <button className="x" title="excluir" onClick={() => delCat(c.id)}><IconTrash /></button>
+          <div className="item" key={c.id} style={{ flexDirection: 'column', alignItems: 'stretch', gap: 6 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span className="info" style={{ gap: 8 }}>
+                <span className="dot" style={{ background: c.color || '#94a3b8' }} />
+                <input defaultValue={c.name} onBlur={(e) => renameCat(c, e.target.value)}
+                  style={{ border: 'none', borderBottom: '1px solid var(--border)', background: 'transparent', fontSize: 15, width: 180 }} />
+              </span>
+              <button className="x" title="excluir" onClick={() => delCat(c.id)}><IconTrash /></button>
+            </div>
+            <input placeholder="identificar por: palavra1, palavra2…" defaultValue={c.keywords || ''}
+              onBlur={(e) => { const v = e.target.value.trim(); if (v !== (c.keywords || '')) updateCat(c, { keywords: v || null }) }}
+              style={{ width: '100%', boxSizing: 'border-box', padding: '6px 8px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12, color: 'var(--muted)' }} />
           </div>
         ))}
         <form onSubmit={addCat} style={{ marginTop: 10, display: 'flex', gap: 8 }}>
