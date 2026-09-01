@@ -65,7 +65,8 @@ function classify(text, amount, ownIbans = []) {
   // transferência entre contas próprias (identificada pelo IBAN cadastrado)
   for (const o of ownIbans) {
     if (o.iban && t.includes(o.iban)) {
-      if (o.tipo === 'poupanca') return amount < 0 ? 'reserva' : 'ignorar' // dinheiro indo/voltando da poupança
+      // conta poupança: sai da cc pra poupança = depósito; volta da poupança = retirada
+      if (o.tipo === 'poupanca') return amount < 0 ? 'deposito' : 'retirada'
       return 'ignorar' // outro bolso gastável = transferência interna
     }
   }
