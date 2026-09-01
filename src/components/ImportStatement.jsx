@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 import * as XLSX from 'xlsx'
 import { supabase } from '../supabaseClient'
-import { money, fmtDate } from '../lib/helpers'
+import { money, fmtDate, disponivelOf, cofrinhoBalance } from '../lib/helpers'
 import { IconClose } from './icons'
 
 const WHO = ['Gui', 'Nathi']
@@ -95,12 +95,13 @@ function parseCSV(text, delim) {
   return rows
 }
 
-export default function ImportStatement({ categories, accounts, expenses, incomes, reload }) {
+export default function ImportStatement({ categories, accounts, expenses, incomes, balances = [], adjustments = [], piggyYear = [], month = '', reload }) {
   const [rows, setRows] = useState([])
   const [account, setAccount] = useState('')
   const [person, setPerson] = useState('Gui')
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState('')
+  const [stmtBal, setStmtBal] = useState(null)  // saldo do banco (Disponibile da linha mais recente)
   const [popup, setPopup] = useState(null)     // { type:'ok'|'err', text }
   const [flashId, setFlashId] = useState(null)  // linha com campo a corrigir
   const accountSelRef = useRef(null)
@@ -177,6 +178,8 @@ export default function ImportStatement({ categories, accounts, expenses, income
       const arr = localMap[k]
       return !!arr && arr.some((d) => d && daysBetween(d, date) <= DUP_WINDOW)
     }
+    const dispCol = col('disponibile')  // saldo do banco após cada movimento (BBVA)
+    let stmt = null, stmtDate = null
     for (let r = hi + 1; r < data.length; r++) {
       const row = data[r]
       if (!row || row.every((c) => c === '' || c == null)) continue
@@ -215,6 +218,10 @@ export default function ImportStatement({ categories, accounts, expenses, income
         text = `${parola} ${mov} ${oss}`
       }
       if (!amount || !date) continue
+      if (dispCol >= 0) {
+        const disp = parseImporto(row[dispCol])
+        if (Number.isFinite(disp) && disp !== 0 && (stmtDate === null || date > stmtDate)) { stmtDate = date; stmt = disp }
+      }
       // poupança: + = depósito (cc->poupança), - = retirada (poupança->cc)
       const type = isPoupanca ? (amount < 0 ? 'retirada' : 'deposito') : classify(text, amount, ownIbans)
       const transfer = !isPoupanca && type === 'ignorar' && isTransferText(text, ownIbans)
@@ -231,6 +238,7 @@ export default function ImportStatement({ categories, accounts, expenses, income
     if (!isPoupanca && parsed.length && parsed.every((r) => r.transfer)) {
       for (const r of parsed) { r.type = r.amount < 0 ? 'retirada' : 'deposito'; r.transfer = false; r.categoryId = ''; r.include = !r.dup }
     }
+    setStmtBal(stmt)
     setRows(parsed)
     if (!parsed.length) setMsg('Nenhum movimento encontrado no arquivo.')
   }
@@ -315,6 +323,24 @@ export default function ImportStatement({ categories, accounts, expenses, income
   const saidas = rows.filter((r) => r.amount < 0)
   const entradas = rows.filter((r) => r.amount >= 0)
 
+  // ---- Check de integridade: saldo do app após importar × saldo do banco (Disponibile) ----
+  const selAcc = accounts.find((a) => a.name === account)
+  const isPoupancaAcct = selAcc?.tipo === 'poupanca'
+  const piggy = person === 'Nathi' ? 'nathi' : 'casa'
+  const year = Number((month || '').slice(0, 4)) || new Date().getFullYear()
+  const appNow = account
+    ? (isPoupancaAcct ? cofrinhoBalance(piggy, { piggyYear, expenses }, year) : disponivelOf(person, { incomes, expenses, balances, adjustments }, month))
+    : null
+  const netSel = rows.filter((r) => r.include && r.type !== 'ignorar').reduce((s, r) => {
+    const a = Math.abs(r.amount)
+    if (isPoupancaAcct) return s + (r.type === 'deposito' ? a : r.type === 'retirada' ? -a : 0)
+    if (r.type === 'entrada' || r.type === 'retirada') return s + a
+    if (r.type === 'gasto' || r.type === 'deposito' || r.type === 'reserva') return s - a
+    return s
+  }, 0)
+  const predicted = appNow != null ? appNow + netSel : null
+  const balDiff = (stmtBal != null && predicted != null) ? Math.round((predicted - stmtBal) * 100) / 100 : null
+
   const renderRow = (r) => (
     <div className="item" key={r.id} style={{ opacity: r.include ? 1 : 0.5 }}>
       <div className="info" style={{ gap: 8, flex: 1, minWidth: 0 }}>
@@ -391,6 +417,17 @@ export default function ImportStatement({ categories, accounts, expenses, income
                 {WHO.map((w) => <option key={w}>{w}</option>)}
               </select></div>
           </div>
+          {account && stmtBal != null && balDiff != null && (
+            Math.abs(balDiff) < 0.01 ? (
+              <div style={{ background: '#dcfce7', border: '1px solid #86efac', color: '#15803d', padding: 10, borderRadius: 10, fontSize: 13, marginBottom: 10 }}>
+                ✓ Confere: após importar, o app fica em <b>{money(predicted)}</b>, igual ao saldo do banco no extrato.
+              </div>
+            ) : (
+              <div className="warn-banner" style={{ marginBottom: 10 }}>
+                ⚠️ <b>Saldos não batem.</b> Após importar, o app fica em <b>{money(predicted)}</b>, mas o banco mostra <b>{money(stmtBal)}</b> (diferença <b>{money(balDiff)}</b>). Provavelmente falta ou sobra algum lançamento — confira antes de confirmar.
+              </div>
+            )
+          )}
           {rows.some((r) => r.dup) && (
             <button className="btn btn-ghost btn-sm" style={{ marginBottom: 10, alignSelf: 'flex-start' }}
               onClick={() => setRows((rs) => rs.filter((r) => !r.dup))}>
