@@ -226,6 +226,11 @@ export default function ImportStatement({ categories, accounts, expenses, income
         categoryId: matchCatByText(text), include: type !== 'ignorar' && !dup, dup,
       })
     }
+    // Auto-detecção da poupança: se TODOS os movimentos são transferências cc↔poupança,
+    // é um extrato da poupança (mesmo sem a coluna Beneficiario) → vira depósito/retirada.
+    if (!isPoupanca && parsed.length && parsed.every((r) => r.transfer)) {
+      for (const r of parsed) { r.type = r.amount < 0 ? 'retirada' : 'deposito'; r.transfer = false; r.categoryId = ''; r.include = !r.dup }
+    }
     setRows(parsed)
     if (!parsed.length) setMsg('Nenhum movimento encontrado no arquivo.')
   }
