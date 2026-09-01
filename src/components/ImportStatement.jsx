@@ -201,8 +201,18 @@ export default function ImportStatement({ categories, accounts, expenses, income
         amount = parseImporto(row[col('importo')])
         date = toISO((row[col('data valuta')] !== '' ? row[col('data valuta')] : row[col('data')]))
         const mCol = col('causale') >= 0 ? col('causale') : col('parola chiave')
-        merchant = cleanBBVA(row[mCol])
-        text = `${row[mCol]} ${row[col('movimento')]}`
+        const parola = String(row[mCol] || '').trim()          // "Bonifico ricevuto" ou o comerciante
+        const mov = String(row[col('movimento')] || '').trim() // nota / "Pagamento con carta"
+        const oss = col('osservazioni') >= 0 ? String(row[col('osservazioni')] || '').trim() : ''
+        // Se a "parola chiave" é genérica (bonifico/transferência), completa o nome com o detalhe.
+        if (/bonific|trasferiment|giro ?conto|accredito|addebito/i.test(parola)) {
+          const detalhe = [mov, oss].filter((s) => s && s.toLowerCase() !== parola.toLowerCase())
+            .filter((s, i, a) => a.findIndex((x) => x.toLowerCase() === s.toLowerCase()) === i).join(' · ')
+          merchant = cleanBBVA(detalhe ? `${parola}: ${detalhe}` : parola)
+        } else {
+          merchant = cleanBBVA(parola)
+        }
+        text = `${parola} ${mov} ${oss}`
       }
       if (!amount || !date) continue
       // poupança: + = depósito (cc->poupança), - = retirada (poupança->cc)
