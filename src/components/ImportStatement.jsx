@@ -221,6 +221,8 @@ export default function ImportStatement({ categories, accounts, expenses, income
       if (dispCol >= 0) {
         const disp = parseImporto(row[dispCol])
         if (Number.isFinite(disp) && disp !== 0 && (stmtDate === null || date > stmtDate)) { stmtDate = date; stmt = disp }
+      } else if (isING && /saldo final/i.test(text)) {
+        stmt = amount // ING traz o saldo final como uma linha própria
       }
       // poupança: + = depósito (cc->poupança), - = retirada (poupança->cc)
       const type = isPoupanca ? (amount < 0 ? 'retirada' : 'deposito') : classify(text, amount, ownIbans)
