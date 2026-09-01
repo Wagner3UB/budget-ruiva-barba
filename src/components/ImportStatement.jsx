@@ -312,12 +312,12 @@ export default function ImportStatement({ categories, accounts, expenses, income
 
   const renderRow = (r) => (
     <div className="item" key={r.id} style={{ opacity: r.include ? 1 : 0.5 }}>
-      <div className="info" style={{ gap: 8 }}>
+      <div className="info" style={{ gap: 8, flex: 1, minWidth: 0 }}>
         <input type="checkbox" checked={r.include} onChange={(e) => upd(r.id, { include: e.target.checked })} />
-        <div>
-          <div className="desc">
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="desc" style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
             <input value={r.desc} onChange={(e) => upd(r.id, { desc: e.target.value })}
-              style={{ border: 'none', borderBottom: '1px solid var(--border)', fontSize: 14, width: 130, background: 'transparent' }} />
+              style={{ border: 'none', borderBottom: '1px solid var(--border)', fontSize: 14, flex: 1, minWidth: 120, background: 'transparent' }} />
             {r.transfer && <span className="tag" style={{ marginLeft: 6, background: '#e0e7ff', color: '#3730a3' }}>transferência</span>}
             {r.dup && <span className="tag" style={{ marginLeft: 6, background: '#fef3c7', color: '#92400e' }}>duplicado?</span>}
           </div>
