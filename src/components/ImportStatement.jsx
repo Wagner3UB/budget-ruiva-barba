@@ -339,33 +339,41 @@ export default function ImportStatement({ categories, accounts, expenses, income
     const exp = [], inc = []
     const piggy = person === 'Nathi' ? 'nathi' : 'casa'
     const other = person === 'Nathi' ? 'Gui' : 'Nathi'
-    // Contraparte já lançada? Consulta o BANCO na hora (não os dados em memória, que podem
-    // estar desatualizados entre imports) + o que estamos prestes a inserir neste mesmo lote.
-    const { data: exTr } = await supabase.from('expenses').select('paid_by,amount,date').eq('is_transfer', true)
-    const { data: inTr } = await supabase.from('incomes').select('person,amount,date').eq('is_transfer', true)
-    const cpExists = (isInc, pers, amt, d) => {
-      const db = (isInc ? (inTr || []) : (exTr || [])).some((x) =>
-        Math.abs(Number(x.amount) - amt) < 0.005 &&
-        (isInc ? x.person === pers : x.paid_by === pers) && x.date && daysBetween(x.date, d) <= DUP_WINDOW)
-      const batch = (isInc ? inc : exp).some((x) =>
-        Math.abs(Number(x.amount) - amt) < 0.005 &&
-        (isInc ? x.person === pers : x.paid_by === pers) && x.date && daysBetween(x.date, d) <= DUP_WINDOW)
-      return db || batch
+    // Transferências (sexo) já lançadas — consulta o BANCO na hora (dados em memória podem
+    // estar velhos entre imports). Guardamos id e 'pending' pra poder CONFIRMAR pendentes.
+    const { data: exTr } = await supabase.from('expenses').select('id,paid_by,amount,date,pending').eq('is_transfer', true)
+    const { data: inTr } = await supabase.from('incomes').select('id,person,amount,date,pending').eq('is_transfer', true)
+    const confirmExp = [], confirmInc = [] // ids de pernas pendentes que este extrato confirma
+    // acha uma perna existente (no banco ou no lote atual). wantPending: true=só pendente, false=só confirmada, null=qualquer
+    const findLeg = (isInc, pers, amt, d, wantPending) => {
+      const db = (isInc ? (inTr || []) : (exTr || [])).find((x) =>
+        Math.abs(Number(x.amount) - amt) < 0.005 && (isInc ? x.person === pers : x.paid_by === pers) &&
+        x.date && daysBetween(x.date, d) <= DUP_WINDOW && (wantPending == null || !!x.pending === wantPending))
+      if (db) return db
+      return (isInc ? inc : exp).find((x) =>
+        Math.abs(Number(x.amount) - amt) < 0.005 && (isInc ? x.person === pers : x.paid_by === pers) &&
+        x.date && daysBetween(x.date, d) <= DUP_WINDOW && (wantPending == null || !!x.pending === wantPending))
     }
     let catSexo = null
     for (const r of sel) {
       if (r.type === 'sexo') {
-        // transferência entre o casal: mexe no saldo dos dois, fora do orçamento
+        // transferência entre o casal: mexe no saldo dos dois, mas fora do orçamento.
+        // A perna DESTE extrato é real (conta já). A contraparte entra PENDENTE — só passa a
+        // contar no saldo da outra pessoa quando o extrato DELA confirmar o movimento.
         const a = Math.abs(r.amount)
         if (!catSexo) catSexo = await ensureCat('Sexo')
-        if (r.amount < 0) {
-          // esta pessoa MANDA: sai do saldo dela (despesa is_transfer) + entra pro outro (se ainda não lançou)
-          exp.push({ date: r.date, category_id: catSexo, description: r.desc, place: r.desc, amount: a, paid_by: person, account, pay_status: 'Sim', is_transfer: true })
-          if (!cpExists(true, other, a, r.date)) inc.push({ month: periodKey(r.date), date: r.date, person: other, description: `Sexo (de ${person})`, amount: a, is_transfer: true })
-        } else {
-          // esta pessoa RECEBE: entra no saldo dela (entrada is_transfer) + sai do outro (se ainda não lançou)
-          inc.push({ month: periodKey(r.date), date: r.date, person, description: r.desc, amount: a, is_transfer: true })
-          if (!cpExists(false, other, a, r.date)) exp.push({ date: r.date, category_id: catSexo, description: `Sexo (para ${person})`, place: r.desc, amount: a, paid_by: other, pay_status: 'Sim', is_transfer: true })
+        const ownIsInc = r.amount > 0            // recebe = entrada; manda = despesa
+        // 1) minha perna (real). Se já existe uma PENDENTE minha (criada quando o outro importou), confirma.
+        const pend = findLeg(ownIsInc, person, a, r.date, true)
+        if (pend?.id) { (ownIsInc ? confirmInc : confirmExp).push(pend.id) }
+        else if (!findLeg(ownIsInc, person, a, r.date, false)) {
+          if (ownIsInc) inc.push({ month: periodKey(r.date), date: r.date, person, description: r.desc, amount: a, is_transfer: true, pending: false })
+          else exp.push({ date: r.date, category_id: catSexo, description: r.desc, place: r.desc, amount: a, paid_by: person, account, pay_status: 'Sim', is_transfer: true, pending: false })
+        }
+        // 2) contraparte do outro — só cria se ainda não existe nenhuma perna dele (pendente ou confirmada)
+        if (!findLeg(!ownIsInc, other, a, r.date, null)) {
+          if (ownIsInc) exp.push({ date: r.date, category_id: catSexo, description: `Sexo (para ${person})`, place: r.desc, amount: a, paid_by: other, pay_status: 'Sim', is_transfer: true, pending: true })
+          else inc.push({ month: periodKey(r.date), date: r.date, person: other, description: `Sexo (de ${person})`, amount: a, is_transfer: true, pending: true })
         }
       } else if (r.type === 'entrada') {
         inc.push({ month: r.date.slice(0, 7), date: r.date, person, description: r.desc || 'Entrada', amount: Math.abs(r.amount) })
@@ -394,9 +402,13 @@ export default function ImportStatement({ categories, accounts, expenses, income
     const batch = 'imp_' + Date.now() // carimbo do lote — permite desfazer este import
     if (exp.length) { const { error } = await supabase.from('expenses').insert(exp.map((x) => ({ ...x, import_batch: batch }))); err = err || error }
     if (inc.length) { const { error } = await supabase.from('incomes').insert(inc.map((x) => ({ ...x, import_batch: batch }))); err = err || error }
+    // confirma pernas pendentes que este extrato provou (passam a contar no saldo)
+    if (confirmExp.length) { const { error } = await supabase.from('expenses').update({ pending: false }).in('id', confirmExp); err = err || error }
+    if (confirmInc.length) { const { error } = await supabase.from('incomes').update({ pending: false }).in('id', confirmInc); err = err || error }
     setBusy(false)
     if (err) { setPopup({ type: 'err', text: 'Erro ao salvar os dados: ' + err.message }); return }
-    setPopup({ type: 'ok', text: `Seus dados foram salvos com sucesso — ${exp.length} gasto(s) e ${inc.length} entrada(s).` })
+    const nConf = confirmExp.length + confirmInc.length
+    setPopup({ type: 'ok', text: `Seus dados foram salvos — ${exp.length} gasto(s) e ${inc.length} entrada(s)${nConf ? `, ${nConf} transferência(s) confirmada(s)` : ''}.` })
     setMsg(''); setRows([]); reload()
   }
 

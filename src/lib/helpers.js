@@ -54,10 +54,10 @@ export const fixedActiveIn = (f, month) =>
 export function disponivelOf(person, { incomes = [], expenses = [], balances = [], adjustments = [] }, month) {
   const opening = Number(balances.find((b) => b.person === person)?.opening || 0)
   const inc = incomes
-    .filter((i) => i.person === person && (!month || i.month <= month))
+    .filter((i) => i.person === person && !i.pending && (!month || i.month <= month))
     .reduce((s, i) => s + Number(i.amount), 0)
   const out = expenses
-    .filter((e) => e.paid_by === person && counted(e) && !(e.piggy_deposit && e.from_cc === false) && !e.piggy_withdraw && (!month || periodKey(e.date) <= month))
+    .filter((e) => e.paid_by === person && counted(e) && !e.pending && !(e.piggy_deposit && e.from_cc === false) && !e.piggy_withdraw && (!month || periodKey(e.date) <= month))
     .reduce((s, e) => s + Number(e.amount), 0)
   // Retiradas da reserva que caem na conta corrente (creditam o Disponível)
   const wdr = expenses

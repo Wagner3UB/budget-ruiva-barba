@@ -64,13 +64,13 @@ export default function Expenses(props) {
           .gte('date', lo).lte('date', hi).limit(1)
         if (cpErr) { setBusy(false); showFlash('Gasto salvo, mas falhou ao checar a entrada: ' + cpErr.message + ' — rode a migração 19.'); reload(); return }
         if (!cp || !cp.length) {
-          // mesmo período (ciclo do dia 10) do gasto, senão o Disponível dela não soma no mês certo
+          // contraparte entra PENDENTE: só conta no saldo do outro quando o extrato dele confirmar
           const { error: incErr } = await supabase.from('incomes').insert({
             month: periodKey(date), date, person: other,
-            description: `Sexo (de ${paidBy})`, amount: val, is_transfer: true,
+            description: `Sexo (de ${paidBy})`, amount: val, is_transfer: true, pending: true,
           })
-          if (incErr) { setBusy(false); showFlash('Gasto salvo, mas a entrada de ' + other + ' falhou: ' + incErr.message + ' — rode a migração 19.'); reload(); return }
-          showFlash(`Gasto adicionado e entrada de ${money(val)} criada para ${other} ✓`)
+          if (incErr) { setBusy(false); showFlash('Gasto salvo, mas a entrada de ' + other + ' falhou: ' + incErr.message + ' — rode as migrações 19 e 22.'); reload(); return }
+          showFlash(`Gasto adicionado — entrada de ${money(val)} criada para ${other} (pendente até o extrato dela confirmar) ✓`)
         } else {
           showFlash(`Gasto adicionado — ${other} já tinha registrado essa entrada ✓`)
         }
@@ -417,7 +417,8 @@ export default function Expenses(props) {
                         <span className="info-i" onMouseEnter={(ev) => showPop(ev, e.place)} onMouseLeave={() => setPop(null)}><IconInfo size={12} /></span>
                       )}
                       <span className="tag" style={{ marginLeft: 6, ...badge.s }}>{badge.t}</span>
-                      {e.is_transfer && <span className="tag" style={{ marginLeft: 6, background: '#f3e8ff', color: '#7e22ce' }}>transferência · fora do orçamento</span>}</div>
+                      {e.is_transfer && <span className="tag" style={{ marginLeft: 6, background: '#f3e8ff', color: '#7e22ce' }}>transferência · fora do orçamento</span>}
+                      {e.pending && <span className="tag" style={{ marginLeft: 6, background: '#fef3c7', color: '#92400e' }}>pendente · aguarda 2º extrato</span>}</div>
                     <div className="meta">{c?.name} · {fmtDate(e.date)} · <span style={{ color: e.paid_by === 'Nathi' ? 'rgba(239,68,68,.65)' : e.paid_by === 'Gui' ? 'rgba(16,185,129,.9)' : 'inherit', fontWeight: 600 }}>{e.paid_by}</span>{e.account ? ` · ${e.account}` : ''}</div>
                   </div>
                 </div>
