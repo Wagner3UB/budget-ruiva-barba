@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 import { supabase } from '../supabaseClient'
 import { IconEdit, IconTrash, IconGear, IconInfo } from './icons'
-import { money, todayISO, monthKey, daysInMonth, fixedActiveIn, PALETTE, parseAmount, fmtDate, monthLabel, shiftMonth, CYCLE_START } from '../lib/helpers'
+import { money, todayISO, monthKey, daysInMonth, fixedActiveIn, PALETTE, parseAmount, fmtDate, monthLabel, shiftMonth, CYCLE_START, periodKey } from '../lib/helpers'
 import KpiSummary from './KpiSummary'
 
 const PAY = ['Não', 'Sim', 'Não contabilizado']
@@ -51,21 +51,25 @@ export default function Expenses(props) {
       await supabase.from('expenses').update(payload).eq('id', editingExpId)
       setEditingExpId(null); setPlace(''); setAmount(''); setPayStatus('Sim'); setToReserve(false); setBusy(false); reload(); showFlash('Gasto atualizado com sucesso ✓')
     } else {
-      await supabase.from('expenses').insert({ ...payload, is_fixed: false })
+      const { error: expErr } = await supabase.from('expenses').insert({ ...payload, is_fixed: false })
+      if (expErr) { setBusy(false); showFlash('Erro ao salvar o gasto: ' + expErr.message); return }
       if (isSexo) {
         // cria a entrada da outra pessoa (se ela ainda não registrou o mesmo valor por perto)
         const other = paidBy === 'Nathi' ? 'Gui' : 'Nathi'
         const [y, m, d] = date.split('-').map(Number)
         const lo = new Date(y, m - 1, d - 4).toISOString().slice(0, 10)
         const hi = new Date(y, m - 1, d + 4).toISOString().slice(0, 10)
-        const { data: cp } = await supabase.from('incomes').select('id')
+        const { data: cp, error: cpErr } = await supabase.from('incomes').select('id')
           .eq('is_transfer', true).eq('person', other).eq('amount', val)
           .gte('date', lo).lte('date', hi).limit(1)
+        if (cpErr) { setBusy(false); showFlash('Gasto salvo, mas falhou ao checar a entrada: ' + cpErr.message + ' — rode a migração 19.'); reload(); return }
         if (!cp || !cp.length) {
-          await supabase.from('incomes').insert({
-            month: date.slice(0, 7), date, person: other,
+          // mesmo período (ciclo do dia 10) do gasto, senão o Disponível dela não soma no mês certo
+          const { error: incErr } = await supabase.from('incomes').insert({
+            month: periodKey(date), date, person: other,
             description: `Sexo (de ${paidBy})`, amount: val, is_transfer: true,
           })
+          if (incErr) { setBusy(false); showFlash('Gasto salvo, mas a entrada de ' + other + ' falhou: ' + incErr.message + ' — rode a migração 19.'); reload(); return }
           showFlash(`Gasto adicionado e entrada de ${money(val)} criada para ${other} ✓`)
         } else {
           showFlash(`Gasto adicionado — ${other} já tinha registrado essa entrada ✓`)
