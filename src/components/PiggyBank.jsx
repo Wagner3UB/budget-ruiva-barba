@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { supabase } from '../supabaseClient'
 import { IconEdit, IconTrash, IconInfo } from './icons'
-import { money, todayISO, parseAmount, fmtDate } from '../lib/helpers'
+import { money, todayISO, parseAmount, fmtDate, periodKey, monthKey, shiftMonth, monthLabel } from '../lib/helpers'
 
 const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
 
@@ -13,6 +13,7 @@ const CFG = {
 export default function PiggyBank({ piggy = 'casa', expenses, incomes = [], fixedExpenses = [], houseTaxes, taxPayments, piggyYear, categories, reload }) {
   const cfg = CFG[piggy] || CFG.casa
   const [year, setYear] = useState(new Date().getFullYear())
+  const [movMonth, setMovMonth] = useState(monthKey()) // filtro de mês da lista de movimentos
   const [pop, setPop] = useState(null) // { text, x, y }
   const showPop = (ev, text) => {
     const r = ev.currentTarget.getBoundingClientRect()
@@ -55,9 +56,9 @@ export default function PiggyBank({ piggy = 'casa', expenses, incomes = [], fixe
   const retiradas = expenses
     .filter((e) => e.piggy_withdraw && (e.piggy || 'casa') === piggy && inYear(e.date))
     .reduce((s, e) => s + Number(e.amount), 0)
-  // movimentos da reserva (depósitos + retiradas), mais recentes primeiro
+  // movimentos da reserva (depósitos + retiradas) do mês filtrado, mais recentes primeiro
   const movimentos = expenses
-    .filter((e) => (e.piggy_deposit || e.piggy_withdraw) && (e.piggy || 'casa') === piggy && inYear(e.date))
+    .filter((e) => (e.piggy_deposit || e.piggy_withdraw) && (e.piggy || 'casa') === piggy && periodKey(e.date) === movMonth)
     .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
   const balance = opening + aportes - retiradas
 
@@ -367,30 +368,37 @@ export default function PiggyBank({ piggy = 'casa', expenses, incomes = [], fixe
             {depEditingId && <button type="button" className="btn btn-ghost" style={{ flex: 0, padding: '13px 16px' }} onClick={cancelDep}>Cancelar</button>}
           </div>
         </form>
-        {movimentos.length > 0 && (
-          <div style={{ marginTop: 12, borderTop: '1px solid var(--border)', paddingTop: 10 }}>
-            <h3 style={{ margin: '0 0 6px' }}>Movimentos da reserva ({movimentos.length})</h3>
-            {movimentos.map((d) => {
-              const isDep = d.piggy_deposit
-              const externo = isDep ? d.from_cc === false : d.to_cc === false
-              return (
-                <div className="item" key={d.id}>
-                  <div>
-                    <div className="desc">{d.place || d.description || (isDep ? 'Depósito' : 'Retirada')}
-                      {externo && <span className="tag" style={{ marginLeft: 6, background: '#e2e8f0', color: '#475569' }}>externo</span>}
-                    </div>
-                    <div className="meta">{fmtDate(d.date)}</div>
-                  </div>
-                  <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                    <span className="amt" style={{ color: isDep ? 'var(--teal)' : 'var(--danger)' }}>{isDep ? '+' : '−'}{money(d.amount)}</span>
-                    {isDep && <button className="icon-btn" title="editar" onClick={() => editDeposit(d)}><IconEdit /></button>}
-                    <button className="x" title="excluir" onClick={() => delDeposit(d.id)}><IconTrash /></button>
-                  </span>
+      </div>
+
+      {/* ---------- MOVIMENTOS DA RESERVA ---------- */}
+      <div className="card">
+        <h2>Movimentos da reserva</h2>
+        <div className="month-nav">
+          <button onClick={() => setMovMonth(shiftMonth(movMonth, -1))}>‹</button>
+          <span className="label">{monthLabel(movMonth)}</span>
+          <button onClick={() => setMovMonth(shiftMonth(movMonth, 1))}>›</button>
+        </div>
+        {movimentos.length === 0 ? (
+          <div className="empty">Nenhum movimento neste mês.</div>
+        ) : movimentos.map((d) => {
+          const isDep = d.piggy_deposit
+          const externo = isDep ? d.from_cc === false : d.to_cc === false
+          return (
+            <div className="item" key={d.id}>
+              <div>
+                <div className="desc">{d.place || d.description || (isDep ? 'Depósito' : 'Retirada')}
+                  {externo && <span className="tag" style={{ marginLeft: 6, background: '#e2e8f0', color: '#475569' }}>externo</span>}
                 </div>
-              )
-            })}
-          </div>
-        )}
+                <div className="meta">{fmtDate(d.date)}</div>
+              </div>
+              <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                <span className="amt" style={{ color: isDep ? 'var(--teal)' : 'var(--danger)' }}>{isDep ? '+' : '−'}{money(d.amount)}</span>
+                {isDep && <button className="icon-btn" title="editar" onClick={() => editDeposit(d)}><IconEdit /></button>}
+                <button className="x" title="excluir" onClick={() => delDeposit(d.id)}><IconTrash /></button>
+              </span>
+            </div>
+          )
+        })}
       </div>
     </>
   )
