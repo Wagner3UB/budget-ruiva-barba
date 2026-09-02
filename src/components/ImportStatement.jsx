@@ -70,7 +70,7 @@ function classify(text, amount, ownIbans = []) {
       return 'ignorar' // outro bolso gastável = transferência interna
     }
   }
-  if (t.includes('fixo') || t.includes('fixos')) return amount < 0 ? 'reserva' : 'ignorar'
+  if (t.includes('fixo') || t.includes('fixos')) return amount < 0 ? 'deposito' : 'ignorar'
   if (TRANSFER_RE.test(t)) return 'ignorar'
   return amount < 0 ? 'gasto' : 'entrada'
 }
@@ -328,7 +328,6 @@ export default function ImportStatement({ categories, accounts, expenses, income
     setMsg(''); setRows([]); reload()
   }
 
-  const TYPES = ['gasto', 'entrada', 'deposito', 'retirada', 'reserva', 'ignorar']
   const nInc = rows.filter((r) => r.include && r.type !== 'ignorar').length
   const needCat = rows.some((r) => r.include && r.type === 'gasto' && !r.categoryId)
   const saidas = rows.filter((r) => r.amount < 0)
@@ -352,6 +351,11 @@ export default function ImportStatement({ categories, accounts, expenses, income
   const predicted = appNow != null ? appNow + netSel : null
   const balDiff = (stmtBal != null && predicted != null) ? Math.round((predicted - stmtBal) * 100) / 100 : null
 
+  // só oferece os tipos coerentes com a direção do movimento
+  const typesFor = (r) => (r.amount < 0
+    ? ['gasto', 'deposito', 'retirada', 'ignorar']    // saída
+    : ['entrada', 'deposito', 'retirada', 'ignorar']) // entrada
+
   const renderRow = (r) => (
     <div className="item" key={r.id} style={{ opacity: r.include ? 1 : 0.5 }}>
       <div className="info" style={{ gap: 8, flex: 1, minWidth: 0 }}>
@@ -367,7 +371,7 @@ export default function ImportStatement({ categories, accounts, expenses, income
             <span>{fmtDate(r.date)}</span>
             <select value={r.type} onChange={(e) => upd(r.id, { type: e.target.value, include: e.target.value !== 'ignorar' })}
               style={{ fontSize: 12, border: '1px solid var(--border)', borderRadius: 6, padding: '1px 4px' }}>
-              {TYPES.map((t) => <option key={t}>{t}</option>)}
+              {typesFor(r).map((t) => <option key={t}>{t}</option>)}
             </select>
             {r.type === 'gasto' && (
               <select id={`cat-${r.id}`} className={flashId === r.id ? 'flash-error' : ''}
