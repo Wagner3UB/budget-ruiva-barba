@@ -62,6 +62,18 @@ export default function PiggyBank({ piggy = 'casa', expenses, incomes = [], fixe
     .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
   const balance = opening + aportes - retiradas
 
+  // ---- Projeção da reserva: do mês atual em diante, saldo real menos o que ainda NÃO foi pago ----
+  const unpaidTotal = (mo) => payments.filter((p) => p.month === mo && !p.paid).reduce((s, p) => s + Number(p.amount), 0)
+  const nowCycle = periodKey(todayISO())          // ciclo atual (dia<10 => mês anterior)
+  const curY = Number(nowCycle.slice(0, 4)), curM = Number(nowCycle.slice(5, 7))
+  const projStart = year > curY ? 1 : year < curY ? 13 : curM
+  const projection = useMemo(() => {
+    const p = {}
+    let running = balance
+    for (let mo = projStart; mo <= 12; mo++) { running -= unpaidTotal(mo); p[mo] = running }
+    return p
+  }, [balance, projStart, payments])
+
   // ---------- acoes ----------
   const [editOpen, setEditOpen] = useState(false)
   const [openVal, setOpenVal] = useState('')
@@ -244,6 +256,14 @@ export default function PiggyBank({ piggy = 'casa', expenses, incomes = [], fixe
                   <td className="name">Soma</td>
                   {MESES.map((m, idx) => <td key={m}>{monthTotal(idx + 1) ? money(monthTotal(idx + 1)).replace(/\s?€/, '') : ''}</td>)}
                   <td className="tot">{money(anualTotal).replace(/\s?€/, '')}</td>
+                </tr>
+                <tr className="total-row" style={{ color: 'var(--accent-soft-text)' }}>
+                  <td className="name" title="Saldo da reserva projetado: do mês atual até dezembro, tirando só o que ainda não foi pago.">Projeção reserva</td>
+                  {MESES.map((m, idx) => {
+                    const v = projection[idx + 1]
+                    return <td key={m} style={{ fontWeight: 700 }}>{v == null ? '' : money(v).replace(/\s?€/, '')}</td>
+                  })}
+                  <td className="tot" style={{ fontWeight: 700 }}>{projection[12] == null ? '' : money(projection[12]).replace(/\s?€/, '')}</td>
                 </tr>
               </tbody>
             </table>
