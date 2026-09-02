@@ -110,21 +110,37 @@ export default function ImportStatement({ categories, accounts, expenses, income
   const [undoAsk, setUndoAsk] = useState(false) // confirmação de "desfazer último import"
   const accountSelRef = useRef(null)
 
-  // último lote importado (maior import_batch = mais recente)
-  const lastBatch = useMemo(() => {
+  // Último import a desfazer. Preferimos o carimbo (import_batch); se o import foi
+  // feito ANTES do carimbo existir, caímos no created_at (linhas gravadas juntas).
+  const lastImport = useMemo(() => {
     let b = null
     for (const e of expenses) if (e.import_batch && (!b || e.import_batch > b)) b = e.import_batch
     for (const i of incomes) if (i.import_batch && (!b || i.import_batch > b)) b = i.import_batch
-    return b
+    if (b) return { kind: 'batch', key: b }
+    let t = null
+    for (const x of expenses) if (x.created_at && (!t || x.created_at > t)) t = x.created_at
+    for (const x of incomes) if (x.created_at && (!t || x.created_at > t)) t = x.created_at
+    return t ? { kind: 'time', key: t } : null
   }, [expenses, incomes])
+  const undoWindowStart = lastImport?.kind === 'time'
+    ? new Date(new Date(lastImport.key).getTime() - 8000).toISOString() : null // janela de 8s (gasto+entrada gravados em statements separados)
+  const inLastImport = (x) => !lastImport ? false
+    : lastImport.kind === 'batch' ? x.import_batch === lastImport.key
+      : (x.created_at && x.created_at >= undoWindowStart)
   const undoCount = useMemo(() =>
-    (lastBatch ? expenses.filter((e) => e.import_batch === lastBatch).length + incomes.filter((i) => i.import_batch === lastBatch).length : 0),
-    [lastBatch, expenses, incomes])
+    (lastImport ? expenses.filter(inLastImport).length + incomes.filter(inLastImport).length : 0),
+    [lastImport, expenses, incomes])
   const undoLast = async () => {
-    if (!lastBatch) return
+    if (!lastImport) return
     setBusy(true)
-    const e1 = (await supabase.from('expenses').delete().eq('import_batch', lastBatch)).error
-    const e2 = (await supabase.from('incomes').delete().eq('import_batch', lastBatch)).error
+    let e1, e2
+    if (lastImport.kind === 'batch') {
+      e1 = (await supabase.from('expenses').delete().eq('import_batch', lastImport.key)).error
+      e2 = (await supabase.from('incomes').delete().eq('import_batch', lastImport.key)).error
+    } else {
+      e1 = (await supabase.from('expenses').delete().gte('created_at', undoWindowStart)).error
+      e2 = (await supabase.from('incomes').delete().gte('created_at', undoWindowStart)).error
+    }
     setBusy(false); setUndoAsk(false)
     if (e1 || e2) { setPopup({ type: 'err', text: 'Erro ao desfazer: ' + (e1 || e2).message }); return }
     setPopup({ type: 'ok', text: `Último import desfeito (${undoCount} lançamento(s) removido(s)).` })
@@ -449,7 +465,7 @@ export default function ImportStatement({ categories, accounts, expenses, income
           <input type="file" accept=".xlsx,.xls,.csv" onChange={onFile} />
         </div>
         {msg && <div className={`msg ${msg.startsWith('Importado') ? 'ok' : 'err'}`}>{msg}</div>}
-        {lastBatch && !undoAsk && (
+        {lastImport && undoCount > 0 && !undoAsk && (
           <button className="btn btn-sm" disabled={busy} onClick={() => setUndoAsk(true)}
             style={{ marginTop: 10, background: 'transparent', border: '1px solid var(--border)', color: 'var(--muted)' }}>
             ↶ Desfazer último import ({undoCount})
