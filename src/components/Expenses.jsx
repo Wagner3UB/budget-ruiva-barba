@@ -155,7 +155,7 @@ export default function Expenses(props) {
   const delAccount = async (id) => { await supabase.from('accounts').delete().eq('id', id); reload() }
 
   const nameOf = (e) => e.place || catById[e.category_id]?.name || ''
-  let variableExpenses = monthExpenses.filter((e) => !e.fixed_id && !e.piggy_deposit && !e.piggy_withdraw)
+  let variableExpenses = monthExpenses.filter((e) => !e.fixed_id && !e.piggy_deposit && !e.piggy_withdraw && !e.is_transfer)
   if (fPerson) variableExpenses = variableExpenses.filter((e) => e.paid_by === fPerson)
   if (fAccount) variableExpenses = variableExpenses.filter((e) => (e.account || '') === fAccount)
   if (fCategory) variableExpenses = variableExpenses.filter((e) => e.category_id === fCategory)

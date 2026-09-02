@@ -295,8 +295,27 @@ export default function ImportStatement({ categories, accounts, expenses, income
     setBusy(true)
     const exp = [], inc = []
     const piggy = person === 'Nathi' ? 'nathi' : 'casa'
+    const other = person === 'Nathi' ? 'Gui' : 'Nathi'
+    // a contraparte da transferência (o outro lado) já foi lançada por quem importou primeiro?
+    const cpExists = (isInc, pers, amt, d) => (isInc ? incomes : expenses).some((x) =>
+      x.is_transfer && Math.abs(Number(x.amount) - amt) < 0.005 &&
+      (isInc ? x.person === pers : x.paid_by === pers) && x.date && daysBetween(x.date, d) <= DUP_WINDOW)
+    let catSexo = null
     for (const r of sel) {
-      if (r.type === 'entrada') {
+      if (r.type === 'sexo') {
+        // transferência entre o casal: mexe no saldo dos dois, fora do orçamento
+        const a = Math.abs(r.amount)
+        if (!catSexo) catSexo = await ensureCat('Sexo')
+        if (r.amount < 0) {
+          // esta pessoa MANDA: sai do saldo dela (despesa is_transfer) + entra pro outro (se ainda não lançou)
+          exp.push({ date: r.date, category_id: catSexo, description: r.desc, place: r.desc, amount: a, paid_by: person, account, pay_status: 'Sim', is_transfer: true })
+          if (!cpExists(true, other, a, r.date)) inc.push({ month: r.date.slice(0, 7), date: r.date, person: other, description: `Sexo (de ${person})`, amount: a, is_transfer: true })
+        } else {
+          // esta pessoa RECEBE: entra no saldo dela (entrada is_transfer) + sai do outro (se ainda não lançou)
+          inc.push({ month: r.date.slice(0, 7), date: r.date, person, description: r.desc, amount: a, is_transfer: true })
+          if (!cpExists(false, other, a, r.date)) exp.push({ date: r.date, category_id: catSexo, description: `Sexo (para ${person})`, place: r.desc, amount: a, paid_by: other, pay_status: 'Sim', is_transfer: true })
+        }
+      } else if (r.type === 'entrada') {
         inc.push({ month: r.date.slice(0, 7), date: r.date, person, description: r.desc || 'Entrada', amount: Math.abs(r.amount) })
       } else if (r.type === 'deposito') {
         // poupança: cc -> poupança (abate Disponível, soma na reserva)
@@ -343,6 +362,7 @@ export default function ImportStatement({ categories, accounts, expenses, income
     : null
   const netSel = rows.filter((r) => r.include && r.type !== 'ignorar').reduce((s, r) => {
     const a = Math.abs(r.amount)
+    if (r.type === 'sexo') return s + (r.amount < 0 ? -a : a) // afeta só o saldo desta conta
     if (isPoupancaAcct) return s + (r.type === 'deposito' ? a : r.type === 'retirada' ? -a : 0)
     if (r.type === 'entrada' || r.type === 'retirada') return s + a
     if (r.type === 'gasto' || r.type === 'deposito' || r.type === 'reserva') return s - a
@@ -353,9 +373,9 @@ export default function ImportStatement({ categories, accounts, expenses, income
 
   // só oferece os tipos coerentes com a direção do movimento
   const typesFor = (r) => (r.amount < 0
-    ? ['gasto', 'deposito', 'retirada', 'ignorar']    // saída
-    : ['entrada', 'deposito', 'retirada', 'ignorar']) // entrada
-  const TYPE_LABEL = { gasto: 'despesa', entrada: 'entrada', deposito: '+ reserva', retirada: '- reserva', ignorar: 'ignorar' }
+    ? ['gasto', 'deposito', 'retirada', 'sexo', 'ignorar']    // saída
+    : ['entrada', 'deposito', 'retirada', 'sexo', 'ignorar']) // entrada
+  const TYPE_LABEL = { gasto: 'despesa', entrada: 'entrada', deposito: '+ reserva', retirada: '- reserva', sexo: 'sexo', ignorar: 'ignorar' }
 
   const renderRow = (r) => (
     <div className="item" key={r.id} style={{ opacity: r.include ? 1 : 0.5 }}>
