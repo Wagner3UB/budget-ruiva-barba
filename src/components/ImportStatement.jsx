@@ -107,7 +107,29 @@ export default function ImportStatement({ categories, accounts, expenses, income
   const [stmtInit, setStmtInit] = useState(null) // saldo no INÍCIO do extrato (mais antigo)
   const [popup, setPopup] = useState(null)     // { type:'ok'|'err', text }
   const [flashId, setFlashId] = useState(null)  // linha com campo a corrigir
+  const [undoAsk, setUndoAsk] = useState(false) // confirmação de "desfazer último import"
   const accountSelRef = useRef(null)
+
+  // último lote importado (maior import_batch = mais recente)
+  const lastBatch = useMemo(() => {
+    let b = null
+    for (const e of expenses) if (e.import_batch && (!b || e.import_batch > b)) b = e.import_batch
+    for (const i of incomes) if (i.import_batch && (!b || i.import_batch > b)) b = i.import_batch
+    return b
+  }, [expenses, incomes])
+  const undoCount = useMemo(() =>
+    (lastBatch ? expenses.filter((e) => e.import_batch === lastBatch).length + incomes.filter((i) => i.import_batch === lastBatch).length : 0),
+    [lastBatch, expenses, incomes])
+  const undoLast = async () => {
+    if (!lastBatch) return
+    setBusy(true)
+    const e1 = (await supabase.from('expenses').delete().eq('import_batch', lastBatch)).error
+    const e2 = (await supabase.from('incomes').delete().eq('import_batch', lastBatch)).error
+    setBusy(false); setUndoAsk(false)
+    if (e1 || e2) { setPopup({ type: 'err', text: 'Erro ao desfazer: ' + (e1 || e2).message }); return }
+    setPopup({ type: 'ok', text: `Último import desfeito (${undoCount} lançamento(s) removido(s)).` })
+    reload()
+  }
 
   const catByName = useMemo(() => {
     const m = {}; for (const c of categories) m[c.name.toLowerCase()] = c; return m
@@ -340,8 +362,9 @@ export default function ImportStatement({ categories, accounts, expenses, income
       }
     }
     let err = null
-    if (exp.length) { const { error } = await supabase.from('expenses').insert(exp); err = err || error }
-    if (inc.length) { const { error } = await supabase.from('incomes').insert(inc); err = err || error }
+    const batch = 'imp_' + Date.now() // carimbo do lote — permite desfazer este import
+    if (exp.length) { const { error } = await supabase.from('expenses').insert(exp.map((x) => ({ ...x, import_batch: batch }))); err = err || error }
+    if (inc.length) { const { error } = await supabase.from('incomes').insert(inc.map((x) => ({ ...x, import_batch: batch }))); err = err || error }
     setBusy(false)
     if (err) { setPopup({ type: 'err', text: 'Erro ao salvar os dados: ' + err.message }); return }
     setPopup({ type: 'ok', text: `Seus dados foram salvos com sucesso — ${exp.length} gasto(s) e ${inc.length} entrada(s).` })
@@ -426,6 +449,21 @@ export default function ImportStatement({ categories, accounts, expenses, income
           <input type="file" accept=".xlsx,.xls,.csv" onChange={onFile} />
         </div>
         {msg && <div className={`msg ${msg.startsWith('Importado') ? 'ok' : 'err'}`}>{msg}</div>}
+        {lastBatch && !undoAsk && (
+          <button className="btn btn-sm" disabled={busy} onClick={() => setUndoAsk(true)}
+            style={{ marginTop: 10, background: 'transparent', border: '1px solid var(--border)', color: 'var(--muted)' }}>
+            ↶ Desfazer último import ({undoCount})
+          </button>
+        )}
+        {undoAsk && (
+          <div className="warn-banner" style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-start' }}>
+            <span>Remover os {undoCount} lançamento(s) do último import? Isso não pode ser desfeito.</span>
+            <span style={{ display: 'flex', gap: 8 }}>
+              <button className="btn btn-sm" disabled={busy} onClick={undoLast} style={{ background: 'var(--danger)', color: '#fff' }}>Sim, desfazer</button>
+              <button className="btn btn-sm" onClick={() => setUndoAsk(false)}>Cancelar</button>
+            </span>
+          </div>
+        )}
       </div>
 
       {rows.length > 0 && (
