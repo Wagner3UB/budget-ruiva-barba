@@ -355,6 +355,7 @@ export default function ImportStatement({ categories, accounts, expenses, income
   const typesFor = (r) => (r.amount < 0
     ? ['gasto', 'deposito', 'retirada', 'ignorar']    // saída
     : ['entrada', 'deposito', 'retirada', 'ignorar']) // entrada
+  const TYPE_LABEL = { gasto: 'despesa', entrada: 'entrada', deposito: '+ reserva', retirada: '- reserva', ignorar: 'ignorar' }
 
   const renderRow = (r) => (
     <div className="item" key={r.id} style={{ opacity: r.include ? 1 : 0.5 }}>
@@ -371,7 +372,7 @@ export default function ImportStatement({ categories, accounts, expenses, income
             <span>{fmtDate(r.date)}</span>
             <select value={r.type} onChange={(e) => upd(r.id, { type: e.target.value, include: e.target.value !== 'ignorar' })}
               style={{ fontSize: 12, border: '1px solid var(--border)', borderRadius: 6, padding: '1px 4px' }}>
-              {typesFor(r).map((t) => <option key={t}>{t}</option>)}
+              {typesFor(r).map((t) => <option key={t} value={t}>{TYPE_LABEL[t]}</option>)}
             </select>
             {r.type === 'gasto' && (
               <select id={`cat-${r.id}`} className={flashId === r.id ? 'flash-error' : ''}
