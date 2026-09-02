@@ -105,6 +105,12 @@ export default function Settings({ categories, accounts, reload, theme, setTheme
                 <option value="gastavel">gastável</option>
                 <option value="poupanca">poupança</option>
               </select>
+              <select defaultValue={a.owner || ''} onChange={(e) => updateAcc(a, { owner: e.target.value || null })}
+                style={{ padding: '6px 8px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 13 }}>
+                <option value="">dono…</option>
+                <option value="Gui">Gui</option>
+                <option value="Nathi">Nathi</option>
+              </select>
             </div>
           </div>
         ))}

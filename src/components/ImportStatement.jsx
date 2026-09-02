@@ -448,7 +448,9 @@ export default function ImportStatement({ categories, accounts, expenses, income
             <div className="field"><label>Conta / Banco</label>
               <select ref={accountSelRef} value={account} onChange={(e) => {
                 const name = e.target.value; setAccount(name)
-                const isP = accounts.find((a) => a.name === name)?.tipo === 'poupanca'
+                const acc = accounts.find((a) => a.name === name)
+                if (acc?.owner) setPerson(acc.owner) // pessoa segue o dono da conta
+                const isP = acc?.tipo === 'poupanca'
                 // conta poupança: todo movimento vira depósito(+)/retirada(−), qualquer formato de extrato
                 if (isP) setRows((rs) => rs.map((r) => ({ ...r, type: r.amount < 0 ? 'retirada' : 'deposito', transfer: false, categoryId: '', include: !r.dup })))
               }}>
