@@ -319,57 +319,6 @@ export default function PiggyBank({ piggy = 'casa', expenses, incomes = [], fixe
         )}
       </div>
 
-      {/* ---------- SALDO INICIAL ---------- */}
-      <div className="card">
-        <h2 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          Saldo inicial do ano
-          <button className="btn btn-sm btn-ghost" onClick={() => { setEditOpen((v) => !v); setOpenVal(String(opening)) }}>
-            {editOpen ? 'fechar' : 'editar'}
-          </button>
-        </h2>
-        {editOpen ? (
-          <>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <input style={{ flex: 1, padding: 10, border: '1px solid var(--border)', borderRadius: 10 }}
-                inputMode="decimal" value={openVal} onChange={(e) => setOpenVal(e.target.value)} placeholder="0,00" />
-              <button className="btn btn-sm" onClick={saveOpening}>Salvar</button>
-            </div>
-            {openMsg && <div className="msg err" style={{ marginTop: 8 }}>{openMsg}</div>}
-          </>
-        ) : (
-          <div className="item"><span className="desc">Reservas no início de {year}</span><span className="amt">{money(opening)}</span></div>
-        )}
-      </div>
-
-      {/* ---------- DEPÓSITO ---------- */}
-      <div className="card">
-        <h2>{depEditingId ? 'Editar depósito' : 'Registrar depósito nas reservas'}</h2>
-        <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: -4 }}>
-          Dinheiro que sai da conta do {cfg.depositor} pra reserva (abate do Disponível dele/dela).
-        </p>
-
-
-                <form id="dep-form" onSubmit={registerDeposit}>
-          <div className="row">
-            <div className="field"><label>Data</label>
-              <input type="date" value={depDate} onChange={(e) => setDepDate(e.target.value)} required /></div>
-            <div className="field"><label>Valor (€)</label>
-              <input inputMode="decimal" value={depAmount} placeholder={money(monthlyReserve)} onChange={(e) => setDepAmount(e.target.value)} /></div>
-          </div>
-          <div className="field"><label>Descrição (opcional)</label>
-            <input value={depNote} onChange={(e) => setDepNote(e.target.value)} placeholder="ex: reserva de julho" /></div>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, marginBottom: 12 }}>
-            <input type="checkbox" checked={fromCC} onChange={(e) => setFromCC(e.target.checked)} />
-            Sai da conta corrente (abate do Disponível). Desmarque se for depósito externo.
-          </label>
-          {depMsg && <div className="msg err">{depMsg}</div>}
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button className="btn" style={{ flex: 1 }}>{depEditingId ? 'Salvar alteração' : 'Registrar depósito'}</button>
-            {depEditingId && <button type="button" className="btn btn-ghost" style={{ flex: 0, padding: '13px 16px' }} onClick={cancelDep}>Cancelar</button>}
-          </div>
-        </form>
-      </div>
-
       {/* ---------- MOVIMENTOS DA RESERVA ---------- */}
       <div className="card">
         <h2>Movimentos da reserva</h2>
@@ -399,6 +348,55 @@ export default function PiggyBank({ piggy = 'casa', expenses, incomes = [], fixe
             </div>
           )
         })}
+      </div>
+
+      {/* ---------- DEPÓSITO ---------- */}
+      <div className="card">
+        <h2>{depEditingId ? 'Editar depósito' : 'Registrar depósito nas reservas'}</h2>
+        <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: -4 }}>
+          Dinheiro que sai da conta do {cfg.depositor} pra reserva (abate do Disponível dele/dela).
+        </p>
+        <form id="dep-form" onSubmit={registerDeposit}>
+          <div className="row">
+            <div className="field"><label>Data</label>
+              <input type="date" value={depDate} onChange={(e) => setDepDate(e.target.value)} required /></div>
+            <div className="field"><label>Valor (€)</label>
+              <input inputMode="decimal" value={depAmount} placeholder={money(monthlyReserve)} onChange={(e) => setDepAmount(e.target.value)} /></div>
+          </div>
+          <div className="field"><label>Descrição (opcional)</label>
+            <input value={depNote} onChange={(e) => setDepNote(e.target.value)} placeholder="ex: reserva de julho" /></div>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, marginBottom: 12 }}>
+            <input type="checkbox" checked={fromCC} onChange={(e) => setFromCC(e.target.checked)} />
+            Sai da conta corrente (abate do Disponível). Desmarque se for depósito externo.
+          </label>
+          {depMsg && <div className="msg err">{depMsg}</div>}
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className="btn" style={{ flex: 1 }}>{depEditingId ? 'Salvar alteração' : 'Registrar depósito'}</button>
+            {depEditingId && <button type="button" className="btn btn-ghost" style={{ flex: 0, padding: '13px 16px' }} onClick={cancelDep}>Cancelar</button>}
+          </div>
+        </form>
+      </div>
+
+      {/* ---------- SALDO INICIAL ---------- */}
+      <div className="card">
+        <h2 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          Saldo inicial do ano
+          <button className="btn btn-sm btn-ghost" onClick={() => { setEditOpen((v) => !v); setOpenVal(String(opening)) }}>
+            {editOpen ? 'fechar' : 'editar'}
+          </button>
+        </h2>
+        {editOpen ? (
+          <>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input style={{ flex: 1, padding: 10, border: '1px solid var(--border)', borderRadius: 10 }}
+                inputMode="decimal" value={openVal} onChange={(e) => setOpenVal(e.target.value)} placeholder="0,00" />
+              <button className="btn btn-sm" onClick={saveOpening}>Salvar</button>
+            </div>
+            {openMsg && <div className="msg err" style={{ marginTop: 8 }}>{openMsg}</div>}
+          </>
+        ) : (
+          <div className="item"><span className="desc">Reservas no início de {year}</span><span className="amt">{money(opening)}</span></div>
+        )}
       </div>
     </>
   )
