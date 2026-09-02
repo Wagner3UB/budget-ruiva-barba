@@ -166,6 +166,7 @@ export default function ImportStatement({ categories, accounts, expenses, income
     for (const [kw, id] of catKeywords) if (t.includes(kw)) return id
     return matchCat(guessCategory(text)) // fallback nas regras padrão embutidas
   }
+  const sexoCatId = useMemo(() => categories.find((c) => c.name === 'Sexo')?.id || null, [categories])
 
   // IBANs das contas próprias (p/ detectar transferência interna)
   const ownIbans = useMemo(
@@ -272,14 +273,17 @@ export default function ImportStatement({ categories, accounts, expenses, income
         }
       }
       // poupança: + = depósito (cc->poupança), - = retirada (poupança->cc)
-      const type = isPoupanca ? (amount < 0 ? 'retirada' : 'deposito') : classify(text, amount, ownIbans)
+      const catId = matchCatByText(text)
+      let type = isPoupanca ? (amount < 0 ? 'retirada' : 'deposito') : classify(text, amount, ownIbans)
+      // se o movimento bate nas palavras-chave da categoria "Sexo", é transferência do casal
+      if (!isPoupanca && sexoCatId && catId === sexoCatId) type = 'sexo'
       const transfer = !isPoupanca && type === 'ignorar' && isTransferText(text, ownIbans)
       const dup = type === 'sexo' ? false : isDup(amount, date)
       const k = Math.abs(amount).toFixed(2)
       ;(localMap[k] = localMap[k] || []).push(date)
       parsed.push({
         id: `${r}`, date, desc: merchant || text.trim().slice(0, 40), amount, type, transfer,
-        categoryId: matchCatByText(text), include: type !== 'ignorar' && !dup, dup,
+        categoryId: catId, include: type !== 'ignorar' && !dup, dup,
       })
     }
     // Auto-detecção da poupança: se TODOS os movimentos são transferências cc↔poupança,
