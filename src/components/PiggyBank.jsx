@@ -55,6 +55,10 @@ export default function PiggyBank({ piggy = 'casa', expenses, incomes = [], fixe
   const retiradas = expenses
     .filter((e) => e.piggy_withdraw && (e.piggy || 'casa') === piggy && inYear(e.date))
     .reduce((s, e) => s + Number(e.amount), 0)
+  // movimentos da reserva (depósitos + retiradas), mais recentes primeiro
+  const movimentos = expenses
+    .filter((e) => (e.piggy_deposit || e.piggy_withdraw) && (e.piggy || 'casa') === piggy && inYear(e.date))
+    .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
   const balance = opening + aportes - retiradas
 
   // ---------- acoes ----------
@@ -363,23 +367,28 @@ export default function PiggyBank({ piggy = 'casa', expenses, incomes = [], fixe
             {depEditingId && <button type="button" className="btn btn-ghost" style={{ flex: 0, padding: '13px 16px' }} onClick={cancelDep}>Cancelar</button>}
           </div>
         </form>
-        {deposits.length > 0 && (
-          <div style={{ marginTop: 12 }}>
-            {deposits.map((d) => (
-              <div className="item" key={d.id}>
-                <div>
-                  <div className="desc">{d.place || d.description || 'Depósito'}
-                    {d.from_cc === false && <span className="tag" style={{ marginLeft: 6, background: '#e2e8f0', color: '#475569' }}>externo</span>}
+        {movimentos.length > 0 && (
+          <div style={{ marginTop: 12, borderTop: '1px solid var(--border)', paddingTop: 10 }}>
+            <h3 style={{ margin: '0 0 6px' }}>Movimentos da reserva ({movimentos.length})</h3>
+            {movimentos.map((d) => {
+              const isDep = d.piggy_deposit
+              const externo = isDep ? d.from_cc === false : d.to_cc === false
+              return (
+                <div className="item" key={d.id}>
+                  <div>
+                    <div className="desc">{d.place || d.description || (isDep ? 'Depósito' : 'Retirada')}
+                      {externo && <span className="tag" style={{ marginLeft: 6, background: '#e2e8f0', color: '#475569' }}>externo</span>}
+                    </div>
+                    <div className="meta">{fmtDate(d.date)}</div>
                   </div>
-                  <div className="meta">{fmtDate(d.date)}</div>
+                  <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                    <span className="amt" style={{ color: isDep ? 'var(--teal)' : 'var(--danger)' }}>{isDep ? '+' : '−'}{money(d.amount)}</span>
+                    {isDep && <button className="icon-btn" title="editar" onClick={() => editDeposit(d)}><IconEdit /></button>}
+                    <button className="x" title="excluir" onClick={() => delDeposit(d.id)}><IconTrash /></button>
+                  </span>
                 </div>
-                <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                  <span className="amt" style={{ color: 'var(--teal)' }}>+{money(d.amount)}</span>
-                  <button className="icon-btn" title="editar" onClick={() => editDeposit(d)}><IconEdit /></button>
-                  <button className="x" title="excluir" onClick={() => delDeposit(d.id)}><IconTrash /></button>
-                </span>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>
