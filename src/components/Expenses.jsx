@@ -38,17 +38,41 @@ export default function Expenses(props) {
     e.preventDefault()
     if (!categoryId || !amount) return
     setBusy(true)
+    const val = parseAmount(amount)
+    const isSexo = catById[categoryId]?.name === 'Sexo' // transferência entre o casal
     const payload = {
       date, category_id: categoryId,
       description: place || catById[categoryId]?.name || '',
-      place, amount: parseAmount(amount),
+      place, amount: val,
       paid_by: paidBy, account: account || null, pay_status: payStatus, to_reserve: toReserve,
+      is_transfer: isSexo,
     }
     if (editingExpId) {
       await supabase.from('expenses').update(payload).eq('id', editingExpId)
       setEditingExpId(null); setPlace(''); setAmount(''); setPayStatus('Sim'); setToReserve(false); setBusy(false); reload(); showFlash('Gasto atualizado com sucesso ✓')
     } else {
       await supabase.from('expenses').insert({ ...payload, is_fixed: false })
+      if (isSexo) {
+        // cria a entrada da outra pessoa (se ela ainda não registrou o mesmo valor por perto)
+        const other = paidBy === 'Nathi' ? 'Gui' : 'Nathi'
+        const [y, m, d] = date.split('-').map(Number)
+        const lo = new Date(y, m - 1, d - 4).toISOString().slice(0, 10)
+        const hi = new Date(y, m - 1, d + 4).toISOString().slice(0, 10)
+        const { data: cp } = await supabase.from('incomes').select('id')
+          .eq('is_transfer', true).eq('person', other).eq('amount', val)
+          .gte('date', lo).lte('date', hi).limit(1)
+        if (!cp || !cp.length) {
+          await supabase.from('incomes').insert({
+            month: date.slice(0, 7), date, person: other,
+            description: `Sexo (de ${paidBy})`, amount: val, is_transfer: true,
+          })
+          showFlash(`Gasto adicionado e entrada de ${money(val)} criada para ${other} ✓`)
+        } else {
+          showFlash(`Gasto adicionado — ${other} já tinha registrado essa entrada ✓`)
+        }
+        setPlace(''); setAmount(''); setPayStatus('Sim'); setToReserve(false); setBusy(false); reload(); amountRef.current?.focus()
+        return
+      }
       setPlace(''); setAmount(''); setPayStatus('Sim'); setToReserve(false); setBusy(false); reload(); showFlash('Gasto adicionado com sucesso ✓')
       amountRef.current?.focus()
     }
