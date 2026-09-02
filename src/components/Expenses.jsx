@@ -179,7 +179,8 @@ export default function Expenses(props) {
   const delAccount = async (id) => { await supabase.from('accounts').delete().eq('id', id); reload() }
 
   const nameOf = (e) => e.place || catById[e.category_id]?.name || ''
-  let variableExpenses = monthExpenses.filter((e) => !e.fixed_id && !e.piggy_deposit && !e.piggy_withdraw && !e.is_transfer)
+  // transferências (Sexo) FICAM VISÍVEIS na lista, mas não entram nas somas
+  let variableExpenses = monthExpenses.filter((e) => !e.fixed_id && !e.piggy_deposit && !e.piggy_withdraw)
   if (fPerson) variableExpenses = variableExpenses.filter((e) => e.paid_by === fPerson)
   if (fAccount) variableExpenses = variableExpenses.filter((e) => (e.account || '') === fAccount)
   if (fCategory) variableExpenses = variableExpenses.filter((e) => e.category_id === fCategory)
@@ -190,7 +191,7 @@ export default function Expenses(props) {
     return (b.date || '').localeCompare(a.date || '')
   })
   const shownTotal = variableExpenses
-    .filter((e) => (e.pay_status ?? 'Não') !== 'Não contabilizado')
+    .filter((e) => (e.pay_status ?? 'Não') !== 'Não contabilizado' && !e.is_transfer)
     .reduce((s, e) => s + Number(e.amount), 0)
   const monthFixedFiltered = monthFixed.filter((f) =>
     (!fPerson || f.paid_by === fPerson) &&
@@ -411,7 +412,8 @@ export default function Expenses(props) {
                       {e.place && (
                         <span className="info-i" onMouseEnter={(ev) => showPop(ev, e.place)} onMouseLeave={() => setPop(null)}><IconInfo size={12} /></span>
                       )}
-                      <span className="tag" style={{ marginLeft: 6, ...badge.s }}>{badge.t}</span></div>
+                      <span className="tag" style={{ marginLeft: 6, ...badge.s }}>{badge.t}</span>
+                      {e.is_transfer && <span className="tag" style={{ marginLeft: 6, background: '#f3e8ff', color: '#7e22ce' }}>transferência · fora do orçamento</span>}</div>
                     <div className="meta">{c?.name} · {fmtDate(e.date)} · <span style={{ color: e.paid_by === 'Nathi' ? 'rgba(239,68,68,.65)' : e.paid_by === 'Gui' ? 'rgba(16,185,129,.9)' : 'inherit', fontWeight: 600 }}>{e.paid_by}</span>{e.account ? ` · ${e.account}` : ''}</div>
                   </div>
                 </div>
