@@ -102,7 +102,8 @@ export default function ImportStatement({ categories, accounts, expenses, income
   const [person, setPerson] = useState('Gui')
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState('')
-  const [stmtBal, setStmtBal] = useState(null)  // saldo do banco (Disponibile da linha mais recente)
+  const [stmtBal, setStmtBal] = useState(null)   // saldo no FIM do extrato (mais recente)
+  const [stmtInit, setStmtInit] = useState(null) // saldo no INÍCIO do extrato (mais antigo)
   const [popup, setPopup] = useState(null)     // { type:'ok'|'err', text }
   const [flashId, setFlashId] = useState(null)  // linha com campo a corrigir
   const accountSelRef = useRef(null)
@@ -180,7 +181,8 @@ export default function ImportStatement({ categories, accounts, expenses, income
       return !!arr && arr.some((d) => d && daysBetween(d, date) <= DUP_WINDOW)
     }
     const dispCol = col('disponibile')  // saldo do banco após cada movimento (BBVA)
-    let stmt = null, stmtDate = null
+    let stmt = null, stmtDate = null      // final (mais recente)
+    let sInit = null, sInitDate = null    // inicial (mais antigo)
     for (let r = hi + 1; r < data.length; r++) {
       const row = data[r]
       if (!row || row.every((c) => c === '' || c == null)) continue
@@ -219,11 +221,16 @@ export default function ImportStatement({ categories, accounts, expenses, income
         text = `${parola} ${mov} ${oss}`
       }
       if (!amount || !date) continue
+      // Linhas de saldo (ING) — NÃO são movimento: captura e não entra na lista
+      if (/saldo inizial/i.test(text)) { sInit = amount; sInitDate = date; continue }
+      if (/saldo final/i.test(text)) { stmt = amount; stmtDate = date; continue }
+      // BBVA: calcula início/fim pela coluna Disponibile (saldo após cada movimento)
       if (dispCol >= 0) {
         const disp = parseImporto(row[dispCol])
-        if (Number.isFinite(disp) && disp !== 0 && (stmtDate === null || date > stmtDate)) { stmtDate = date; stmt = disp }
-      } else if (isING && /saldo final/i.test(text)) {
-        stmt = amount // ING traz o saldo final como uma linha própria
+        if (Number.isFinite(disp)) {
+          if (stmtDate === null || date > stmtDate) { stmtDate = date; stmt = disp }               // fim = disp do mais recente
+          if (sInitDate === null || date < sInitDate) { sInitDate = date; sInit = disp - amount }   // início = disp do mais antigo − o importo dele
+        }
       }
       // poupança: + = depósito (cc->poupança), - = retirada (poupança->cc)
       const type = isPoupanca ? (amount < 0 ? 'retirada' : 'deposito') : classify(text, amount, ownIbans)
@@ -242,6 +249,7 @@ export default function ImportStatement({ categories, accounts, expenses, income
       for (const r of parsed) { r.type = r.amount < 0 ? 'retirada' : 'deposito'; r.transfer = false; r.categoryId = ''; r.include = !r.dup }
     }
     setStmtBal(stmt)
+    setStmtInit(sInit)
     setRows(parsed)
     if (!parsed.length) setMsg('Nenhum movimento encontrado no arquivo.')
   }
@@ -404,6 +412,12 @@ export default function ImportStatement({ categories, accounts, expenses, income
           <p style={{ fontSize: 12, color: 'var(--muted)', margin: '2px 0 8px' }}>
             Ajuste o que precisar. Nada é gravado até você confirmar.
           </p>
+          {(stmtInit != null || stmtBal != null) && (
+            <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', fontSize: 13, background: 'var(--hover)', border: '1px solid var(--border)', borderRadius: 10, padding: '8px 12px', marginBottom: 10 }}>
+              {stmtInit != null && <span style={{ color: 'var(--muted)' }}>Saldo no início do extrato: <b style={{ color: 'var(--text)' }}>{money(stmtInit)}</b></span>}
+              {stmtBal != null && <span style={{ color: 'var(--muted)' }}>Saldo atual (fim do extrato): <b style={{ color: 'var(--text)' }}>{money(stmtBal)}</b></span>}
+            </div>
+          )}
           <div className="row">
             <div className="field"><label>Conta / Banco</label>
               <select ref={accountSelRef} value={account} onChange={(e) => {
