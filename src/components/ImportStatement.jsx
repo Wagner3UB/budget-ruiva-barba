@@ -67,7 +67,8 @@ function classify(text, amount, ownIbans = []) {
     if (o.iban && t.includes(o.iban)) {
       // conta poupança: sai da cc pra poupança = depósito; volta da poupança = retirada
       if (o.tipo === 'poupanca') return amount < 0 ? 'deposito' : 'retirada'
-      return 'ignorar' // outro bolso gastável = transferência interna
+      // cc do casal: não existe segunda gastável, então é dinheiro passando entre nós dois = "sexo"
+      return 'sexo'
     }
   }
   if (t.includes('fixo') || t.includes('fixos')) return amount < 0 ? 'deposito' : 'ignorar'
