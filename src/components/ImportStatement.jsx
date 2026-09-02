@@ -235,7 +235,7 @@ export default function ImportStatement({ categories, accounts, expenses, income
       // poupança: + = depósito (cc->poupança), - = retirada (poupança->cc)
       const type = isPoupanca ? (amount < 0 ? 'retirada' : 'deposito') : classify(text, amount, ownIbans)
       const transfer = !isPoupanca && type === 'ignorar' && isTransferText(text, ownIbans)
-      const dup = isDup(amount, date)
+      const dup = type === 'sexo' ? false : isDup(amount, date)
       const k = Math.abs(amount).toFixed(2)
       ;(localMap[k] = localMap[k] || []).push(date)
       parsed.push({
@@ -390,7 +390,7 @@ export default function ImportStatement({ categories, accounts, expenses, income
           </div>
           <div className="meta" style={{ display: 'flex', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
             <span>{fmtDate(r.date)}</span>
-            <select value={r.type} onChange={(e) => upd(r.id, { type: e.target.value, include: e.target.value !== 'ignorar' })}
+            <select value={r.type} onChange={(e) => { const nt = e.target.value; upd(r.id, { type: nt, include: nt !== 'ignorar' && (nt === 'sexo' || !r.dup), dup: nt === 'sexo' ? false : r.dup }) }}
               style={{ fontSize: 12, border: '1px solid var(--border)', borderRadius: 6, padding: '1px 4px' }}>
               {typesFor(r).map((t) => <option key={t} value={t}>{TYPE_LABEL[t]}</option>)}
             </select>
