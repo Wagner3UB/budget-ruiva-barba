@@ -122,11 +122,11 @@ export default function ImportStatement({ categories, accounts, expenses, income
     for (const x of incomes) if (x.created_at && (!t || x.created_at > t)) t = x.created_at
     return t ? { kind: 'time', key: t } : null
   }, [expenses, incomes])
-  const undoWindowStart = lastImport?.kind === 'time'
-    ? new Date(new Date(lastImport.key).getTime() - 8000).toISOString() : null // janela de 8s (gasto+entrada gravados em statements separados)
+  const undoWindowMs = lastImport?.kind === 'time' ? new Date(lastImport.key).getTime() - 8000 : null // janela de 8s (gasto+entrada gravados em statements separados)
+  const undoWindowStart = undoWindowMs != null ? new Date(undoWindowMs).toISOString() : null
   const inLastImport = (x) => !lastImport ? false
     : lastImport.kind === 'batch' ? x.import_batch === lastImport.key
-      : (x.created_at && x.created_at >= undoWindowStart)
+      : (x.created_at && new Date(x.created_at).getTime() >= undoWindowMs)
   const undoCount = useMemo(() =>
     (lastImport ? expenses.filter(inLastImport).length + incomes.filter(inLastImport).length : 0),
     [lastImport, expenses, incomes])
