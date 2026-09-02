@@ -166,7 +166,7 @@ export default function ImportStatement({ categories, accounts, expenses, income
     for (const [kw, id] of catKeywords) if (t.includes(kw)) return id
     return matchCat(guessCategory(text)) // fallback nas regras padrão embutidas
   }
-  const sexoCatId = useMemo(() => categories.find((c) => c.name === 'Sexo')?.id || null, [categories])
+  const sexoCatId = useMemo(() => categories.find((c) => c.name === 'Amor')?.id || null, [categories])
 
   // IBANs das contas próprias (p/ detectar transferência interna)
   const ownIbans = useMemo(
@@ -275,7 +275,7 @@ export default function ImportStatement({ categories, accounts, expenses, income
       // poupança: + = depósito (cc->poupança), - = retirada (poupança->cc)
       const catId = matchCatByText(text)
       let type = isPoupanca ? (amount < 0 ? 'retirada' : 'deposito') : classify(text, amount, ownIbans)
-      // se o movimento bate nas palavras-chave da categoria "Sexo", é transferência do casal
+      // se o movimento bate nas palavras-chave da categoria "Amor", é transferência do casal
       if (!isPoupanca && sexoCatId && catId === sexoCatId) type = 'sexo'
       const transfer = !isPoupanca && type === 'ignorar' && isTransferText(text, ownIbans)
       const dup = type === 'sexo' ? false : isDup(amount, date)
@@ -354,26 +354,26 @@ export default function ImportStatement({ categories, accounts, expenses, income
         Math.abs(Number(x.amount) - amt) < 0.005 && (isInc ? x.person === pers : x.paid_by === pers) &&
         x.date && daysBetween(x.date, d) <= DUP_WINDOW && (wantPending == null || !!x.pending === wantPending))
     }
-    let catSexo = null
+    let catAmor = null
     for (const r of sel) {
       if (r.type === 'sexo') {
         // transferência entre o casal: mexe no saldo dos dois, mas fora do orçamento.
         // A perna DESTE extrato é real (conta já). A contraparte entra PENDENTE — só passa a
         // contar no saldo da outra pessoa quando o extrato DELA confirmar o movimento.
         const a = Math.abs(r.amount)
-        if (!catSexo) catSexo = await ensureCat('Sexo')
+        if (!catAmor) catAmor = await ensureCat('Amor')
         const ownIsInc = r.amount > 0            // recebe = entrada; manda = despesa
         // 1) minha perna (real). Se já existe uma PENDENTE minha (criada quando o outro importou), confirma.
         const pend = findLeg(ownIsInc, person, a, r.date, true)
         if (pend?.id) { (ownIsInc ? confirmInc : confirmExp).push(pend.id) }
         else if (!findLeg(ownIsInc, person, a, r.date, false)) {
           if (ownIsInc) inc.push({ month: periodKey(r.date), date: r.date, person, description: r.desc, amount: a, is_transfer: true, pending: false })
-          else exp.push({ date: r.date, category_id: catSexo, description: r.desc, place: r.desc, amount: a, paid_by: person, account, pay_status: 'Sim', is_transfer: true, pending: false })
+          else exp.push({ date: r.date, category_id: catAmor, description: r.desc, place: r.desc, amount: a, paid_by: person, account, pay_status: 'Sim', is_transfer: true, pending: false })
         }
         // 2) contraparte do outro — só cria se ainda não existe nenhuma perna dele (pendente ou confirmada)
         if (!findLeg(!ownIsInc, other, a, r.date, null)) {
-          if (ownIsInc) exp.push({ date: r.date, category_id: catSexo, description: `Sexo (para ${person})`, place: r.desc, amount: a, paid_by: other, pay_status: 'Sim', is_transfer: true, pending: true })
-          else inc.push({ month: periodKey(r.date), date: r.date, person: other, description: `Sexo (de ${person})`, amount: a, is_transfer: true, pending: true })
+          if (ownIsInc) exp.push({ date: r.date, category_id: catAmor, description: `Amor (para ${person})`, place: r.desc, amount: a, paid_by: other, pay_status: 'Sim', is_transfer: true, pending: true })
+          else inc.push({ month: periodKey(r.date), date: r.date, person: other, description: `Amor (de ${person})`, amount: a, is_transfer: true, pending: true })
         }
       } else if (r.type === 'entrada') {
         inc.push({ month: r.date.slice(0, 7), date: r.date, person, description: r.desc || 'Entrada', amount: Math.abs(r.amount) })

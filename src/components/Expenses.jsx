@@ -39,13 +39,13 @@ export default function Expenses(props) {
     if (!categoryId || !amount) return
     setBusy(true)
     const val = parseAmount(amount)
-    const isSexo = catById[categoryId]?.name === 'Sexo' // transferência entre o casal
+    const isAmor = catById[categoryId]?.name === 'Amor' // transferência entre o casal
     const payload = {
       date, category_id: categoryId,
       description: place || catById[categoryId]?.name || '',
       place, amount: val,
       paid_by: paidBy, account: account || null, pay_status: payStatus, to_reserve: toReserve,
-      is_transfer: isSexo,
+      is_transfer: isAmor,
     }
     if (editingExpId) {
       await supabase.from('expenses').update(payload).eq('id', editingExpId)
@@ -53,7 +53,7 @@ export default function Expenses(props) {
     } else {
       const { error: expErr } = await supabase.from('expenses').insert({ ...payload, is_fixed: false })
       if (expErr) { setBusy(false); showFlash('Erro ao salvar o gasto: ' + expErr.message); return }
-      if (isSexo) {
+      if (isAmor) {
         // cria a entrada da outra pessoa (se ela ainda não registrou o mesmo valor por perto)
         const other = paidBy === 'Nathi' ? 'Gui' : 'Nathi'
         const [y, m, d] = date.split('-').map(Number)
@@ -67,7 +67,7 @@ export default function Expenses(props) {
           // contraparte entra PENDENTE: só conta no saldo do outro quando o extrato dele confirmar
           const { error: incErr } = await supabase.from('incomes').insert({
             month: periodKey(date), date, person: other,
-            description: `Sexo (de ${paidBy})`, amount: val, is_transfer: true, pending: true,
+            description: `Amor (de ${paidBy})`, amount: val, is_transfer: true, pending: true,
           })
           if (incErr) { setBusy(false); showFlash('Gasto salvo, mas a entrada de ' + other + ' falhou: ' + incErr.message + ' — rode as migrações 19 e 22.'); reload(); return }
           showFlash(`Gasto adicionado — entrada de ${money(val)} criada para ${other} (pendente até o extrato dela confirmar) ✓`)
@@ -183,7 +183,7 @@ export default function Expenses(props) {
   const delAccount = async (id) => { await supabase.from('accounts').delete().eq('id', id); reload() }
 
   const nameOf = (e) => e.place || catById[e.category_id]?.name || ''
-  // transferências (Sexo) FICAM VISÍVEIS na lista, mas não entram nas somas
+  // transferências (Amor) FICAM VISÍVEIS na lista, mas não entram nas somas
   let variableExpenses = monthExpenses.filter((e) => !e.fixed_id && !e.piggy_deposit && !e.piggy_withdraw)
   if (fPerson) variableExpenses = variableExpenses.filter((e) => e.paid_by === fPerson)
   if (fAccount) variableExpenses = variableExpenses.filter((e) => (e.account || '') === fAccount)
