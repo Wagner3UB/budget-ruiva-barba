@@ -59,16 +59,17 @@ const cleanING = (causale, descr) => {
 // palavras-chave que denunciam transferência entre contas próprias
 const TRANSFER_RE = /giro ?conto|trasferimento (su|da) conto|\bfixos? mes\b|\bfixo junho\b/i
 
-function classify(text, amount, ownIbans = []) {
+function classify(text, amount, ownIbans = [], person = null) {
   const t = text.toLowerCase()
   if (t.includes('saldo inizial') || t.includes('saldo final')) return 'ignorar'
   // transferência entre contas próprias (identificada pelo IBAN cadastrado)
   for (const o of ownIbans) {
-    if (o.iban && t.includes(o.iban)) {
+    if (o.iban && t.includes(String(o.iban).toLowerCase())) {
       // conta poupança: sai da cc pra poupança = depósito; volta da poupança = retirada
       if (o.tipo === 'poupanca') return amount < 0 ? 'deposito' : 'retirada'
-      // cc do casal: não existe segunda gastável, então é dinheiro passando entre nós dois = "sexo"
-      return 'sexo'
+      // gastável própria: mesmo dono = transferência interna (ignorar); dono diferente = casal (sexo)
+      if (o.owner && person) return o.owner === person ? 'ignorar' : 'sexo'
+      return 'ignorar' // dono indefinido: trata como interna (conservador)
     }
   }
   if (t.includes('fixo') || t.includes('fixos')) return amount < 0 ? 'deposito' : 'ignorar'
@@ -274,7 +275,7 @@ export default function ImportStatement({ categories, accounts, expenses, income
       }
       // poupança: + = depósito (cc->poupança), - = retirada (poupança->cc)
       const catId = matchCatByText(text)
-      let type = isPoupanca ? (amount < 0 ? 'retirada' : 'deposito') : classify(text, amount, ownIbans)
+      let type = isPoupanca ? (amount < 0 ? 'retirada' : 'deposito') : classify(text, amount, ownIbans, person)
       // se o movimento bate nas palavras-chave da categoria "Amor", é transferência do casal
       if (!isPoupanca && sexoCatId && catId === sexoCatId) type = 'sexo'
       const transfer = !isPoupanca && type === 'ignorar' && isTransferText(text, ownIbans)
@@ -283,7 +284,7 @@ export default function ImportStatement({ categories, accounts, expenses, income
       ;(localMap[k] = localMap[k] || []).push(date)
       parsed.push({
         id: `${r}`, date, desc: merchant || text.trim().slice(0, 40), amount, type, transfer,
-        categoryId: catId, include: type !== 'ignorar' && !dup, dup,
+        categoryId: catId, include: type !== 'ignorar' && !dup, dup, text,
       })
     }
     // Auto-detecção da poupança: se TODOS os movimentos são transferências cc↔poupança,
@@ -528,10 +529,18 @@ export default function ImportStatement({ categories, accounts, expenses, income
               <select ref={accountSelRef} value={account} onChange={(e) => {
                 const name = e.target.value; setAccount(name)
                 const acc = accounts.find((a) => a.name === name)
+                const newPerson = acc?.owner || person
                 if (acc?.owner) setPerson(acc.owner) // pessoa segue o dono da conta
                 const isP = acc?.tipo === 'poupanca'
-                // conta poupança: todo movimento vira depósito(+)/retirada(−), qualquer formato de extrato
-                if (isP) setRows((rs) => rs.map((r) => ({ ...r, type: r.amount < 0 ? 'retirada' : 'deposito', transfer: false, categoryId: '', include: !r.dup })))
+                // re-classifica todas as linhas com o dono da conta escolhida:
+                // poupança -> depósito/retirada; gastável -> reavalia interna(ignorar)/casal(sexo)/gasto/entrada
+                setRows((rs) => rs.map((r) => {
+                  if (isP) return { ...r, type: r.amount < 0 ? 'retirada' : 'deposito', transfer: false, categoryId: '', include: !r.dup }
+                  let type = classify(r.text || r.desc || '', r.amount, ownIbans, newPerson)
+                  if (sexoCatId && r.categoryId === sexoCatId) type = 'sexo'
+                  const transfer = type === 'ignorar' && isTransferText(r.text || r.desc || '', ownIbans)
+                  return { ...r, type, transfer, include: type !== 'ignorar' && (type === 'sexo' || !r.dup) }
+                }))
               }}>
                 <option value="">Selecione…</option>
                 {accounts.map((a) => <option key={a.id} value={a.name}>{a.name}</option>)}
