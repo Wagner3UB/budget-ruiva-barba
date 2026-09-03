@@ -175,12 +175,13 @@ export default function ImportStatement({ categories, accounts, expenses, income
     [accounts])
 
   // mapa: valor -> lista de datas já existentes (p/ detectar duplicado por valor + data próxima)
+  // dois mapas separados: saídas (despesas) e entradas — uma saída NUNCA é duplicata de uma entrada
   const existByAmount = useMemo(() => {
-    const m = {}
-    const add = (amt, date) => { const k = Math.abs(Number(amt)).toFixed(2); (m[k] = m[k] || []).push(date) }
-    for (const e of expenses) add(e.amount, e.date)
-    for (const i of incomes) add(i.amount, i.date)
-    return m
+    const out = {}, inc = {}
+    const add = (m, amt, date) => { const k = Math.abs(Number(amt)).toFixed(2); (m[k] = m[k] || []).push(date) }
+    for (const e of expenses) add(out, e.amount, e.date)
+    for (const i of incomes) add(inc, i.amount, i.date)
+    return { out, inc }
   }, [expenses, incomes])
   const DUP_WINDOW = 4 // dias de tolerância entre datas
   const daysBetween = (a, b) => Math.abs((new Date(a) - new Date(b)) / 86400000)
@@ -214,11 +215,12 @@ export default function ImportStatement({ categories, accounts, expenses, income
     // Extrato da POUPANÇA (formato "Movimenti": tem coluna Beneficiario) — só transferências de/para a cc
     const isPoupanca = head.some((h) => h.includes('beneficiario'))
     const parsed = []
-    const localMap = {}
-    for (const k in existByAmount) localMap[k] = [...existByAmount[k]]
+    const localOut = {}, localInc = {}
+    for (const k in existByAmount.out) localOut[k] = [...existByAmount.out[k]]
+    for (const k in existByAmount.inc) localInc[k] = [...existByAmount.inc[k]]
     const isDup = (amt, date) => {
       const k = Math.abs(amt).toFixed(2)
-      const arr = localMap[k]
+      const arr = (amt < 0 ? localOut : localInc)[k]  // saída checa saídas; entrada checa entradas
       return !!arr && arr.some((d) => d && daysBetween(d, date) <= DUP_WINDOW)
     }
     const dispCol = col('disponibile')  // saldo do banco após cada movimento (BBVA)
@@ -261,10 +263,11 @@ export default function ImportStatement({ categories, accounts, expenses, income
         }
         text = `${parola} ${mov} ${oss}`
       }
+      // Linhas de saldo (ING) — NÃO são movimento e PODEM ter importo 0 (ex: saldo finale 0,00):
+      // captura ANTES do guard de amount, senão o 0 é descartado e o banner/checagem somem.
+      if (/saldo inizial/i.test(text)) { if (Number.isFinite(amount)) { sInit = amount; sInitDate = date }; continue }
+      if (/saldo final/i.test(text)) { if (Number.isFinite(amount)) { stmt = amount; stmtDate = date }; continue }
       if (!amount || !date) continue
-      // Linhas de saldo (ING) — NÃO são movimento: captura e não entra na lista
-      if (/saldo inizial/i.test(text)) { sInit = amount; sInitDate = date; continue }
-      if (/saldo final/i.test(text)) { stmt = amount; stmtDate = date; continue }
       // BBVA: calcula início/fim pela coluna Disponibile (saldo após cada movimento)
       if (dispCol >= 0) {
         const disp = parseImporto(row[dispCol])
@@ -276,12 +279,13 @@ export default function ImportStatement({ categories, accounts, expenses, income
       // poupança: + = depósito (cc->poupança), - = retirada (poupança->cc)
       const catId = matchCatByText(text)
       let type = isPoupanca ? (amount < 0 ? 'retirada' : 'deposito') : classify(text, amount, ownIbans, person)
-      // se o movimento bate nas palavras-chave da categoria "Amor", é transferência do casal
-      if (!isPoupanca && sexoCatId && catId === sexoCatId) type = 'sexo'
+      // palavras-chave da categoria "Amor" marcam sexo — MAS nunca sobre uma transferência interna (ignorar)
+      if (!isPoupanca && sexoCatId && catId === sexoCatId && type !== 'ignorar') type = 'sexo'
       const transfer = !isPoupanca && type === 'ignorar' && isTransferText(text, ownIbans)
       const dup = type === 'sexo' ? false : isDup(amount, date)
       const k = Math.abs(amount).toFixed(2)
-      ;(localMap[k] = localMap[k] || []).push(date)
+      const lmap = amount < 0 ? localOut : localInc
+      ;(lmap[k] = lmap[k] || []).push(date)
       parsed.push({
         id: `${r}`, date, desc: merchant || text.trim().slice(0, 40), amount, type, transfer,
         categoryId: catId, include: type !== 'ignorar' && !dup, dup, text,
@@ -441,7 +445,7 @@ export default function ImportStatement({ categories, accounts, expenses, income
   const typesFor = (r) => (r.amount < 0
     ? ['gasto', 'deposito', 'retirada', 'sexo', 'ignorar']    // saída
     : ['entrada', 'deposito', 'retirada', 'sexo', 'ignorar']) // entrada
-  const TYPE_LABEL = { gasto: 'despesa', entrada: 'entrada', deposito: '+ reserva', retirada: '- reserva', sexo: 'sexo', ignorar: 'ignorar' }
+  const TYPE_LABEL = { gasto: 'despesa', entrada: 'entrada', deposito: '+ reserva', retirada: '- reserva', sexo: 'amor', ignorar: 'ignorar' }
 
   const renderRow = (r) => (
     <div className="item" key={r.id} style={{ opacity: r.include ? 1 : 0.5 }}>
@@ -537,7 +541,7 @@ export default function ImportStatement({ categories, accounts, expenses, income
                 setRows((rs) => rs.map((r) => {
                   if (isP) return { ...r, type: r.amount < 0 ? 'retirada' : 'deposito', transfer: false, categoryId: '', include: !r.dup }
                   let type = classify(r.text || r.desc || '', r.amount, ownIbans, newPerson)
-                  if (sexoCatId && r.categoryId === sexoCatId) type = 'sexo'
+                  if (sexoCatId && r.categoryId === sexoCatId && type !== 'ignorar') type = 'sexo'
                   const transfer = type === 'ignorar' && isTransferText(r.text || r.desc || '', ownIbans)
                   return { ...r, type, transfer, include: type !== 'ignorar' && (type === 'sexo' || !r.dup) }
                 }))
