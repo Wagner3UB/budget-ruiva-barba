@@ -212,8 +212,10 @@ export default function ImportStatement({ categories, accounts, expenses, income
     const head = data[hi].map((c) => String(c).toLowerCase())
     const col = (name) => head.findIndex((h) => h.includes(name))
     const isING = head.some((h) => h.includes('uscite'))
-    // Extrato da POUPANÇA (formato "Movimenti": tem coluna Beneficiario) — só transferências de/para a cc
-    const isPoupanca = head.some((h) => h.includes('beneficiario'))
+    // A poupança NÃO é detectada pelo formato (a cc do BBVA também tem coluna "Beneficiario").
+    // Ela vem da CONTA selecionada (tipo=poupança, no onChange) ou da auto-detecção por conteúdo
+    // (todos os movimentos são transferências cc↔poupança).
+    const isPoupanca = false
     const parsed = []
     const localOut = {}, localInc = {}
     for (const k in existByAmount.out) localOut[k] = [...existByAmount.out[k]]
@@ -250,18 +252,26 @@ export default function ImportStatement({ categories, accounts, expenses, income
         amount = parseImporto(row[col('importo')])
         date = toISO((row[col('data valuta')] !== '' ? row[col('data valuta')] : row[col('data')]))
         const mCol = col('causale') >= 0 ? col('causale') : col('parola chiave')
-        const parola = String(row[mCol] || '').trim()          // "Bonifico ricevuto" ou o comerciante
-        const mov = String(row[col('movimento')] || '').trim() // nota / "Pagamento con carta"
+        const parola = String(row[mCol] || '').trim()          // "Bonifico ricevuto" (transf.) OU o comerciante (cartão)
+        const movRaw = String(row[col('movimento')] || '').trim() // nota do bonifico OU "Pagamento con carta"
         const oss = col('osservazioni') >= 0 ? String(row[col('osservazioni')] || '').trim() : ''
+        // "Pagamento con carta" é genérico — nesse caso o nome da loja está na Causale (parola)
+        const mov = /pagamento con carta/i.test(movRaw) ? '' : movRaw
+        // Beneficiario = "Nome\nIBAN" (contraparte) — só serve p/ classificar (IBAN/keyword), não vira nome
+        const benefCol = col('beneficiario')
+        let benef = benefCol >= 0 ? String(row[benefCol] || '').replace(/[\n\r]+/g, ' ').trim() : ''
+        if (/^[-\s]*$/.test(benef)) benef = ''
         // Se a "parola chiave" é genérica (bonifico/transferência), completa o nome com o detalhe.
-        if (/bonific|trasferiment|giro ?conto|accredito|addebito/i.test(parola)) {
+        if (/bonific|trasferiment|giro ?conto|accredito|addebito|storno|liquidazione|bonus|cashback/i.test(parola)) {
           const detalhe = [mov, oss].filter((s) => s && s.toLowerCase() !== parola.toLowerCase())
             .filter((s, i, a) => a.findIndex((x) => x.toLowerCase() === s.toLowerCase()) === i).join(' · ')
           merchant = cleanBBVA(detalhe ? `${parola}: ${detalhe}` : parola)
         } else {
           merchant = cleanBBVA(parola)
         }
-        text = `${parola} ${mov} ${oss}`
+        // Beneficiario só entra no texto em SAÍDAS (aí é a contraparte real). Em entradas ele é
+        // a própria conta (você), o que faria todo recebimento casar com o próprio IBAN.
+        text = `${parola} ${movRaw} ${oss} ${amount < 0 ? benef : ''}`
       }
       // Linhas de saldo (ING) — NÃO são movimento e PODEM ter importo 0 (ex: saldo finale 0,00):
       // captura ANTES do guard de amount, senão o 0 é descartado e o banner/checagem somem.
