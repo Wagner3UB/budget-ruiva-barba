@@ -109,6 +109,7 @@ export default function ImportStatement({ categories, accounts, expenses, income
   const [popup, setPopup] = useState(null)     // { type:'ok'|'err', text }
   const [flashId, setFlashId] = useState(null)  // linha com campo a corrigir
   const [undoAsk, setUndoAsk] = useState(false) // confirmação de "desfazer último import"
+  const [manualBal, setManualBal] = useState('') // saldo do banco digitado (quando o extrato não traz)
   const accountSelRef = useRef(null)
 
   // Último import a desfazer. Preferimos o carimbo (import_batch); se o import foi
@@ -449,7 +450,9 @@ export default function ImportStatement({ categories, accounts, expenses, income
     return s
   }, 0)
   const predicted = appNow != null ? appNow + netSel : null
-  const balDiff = (stmtBal != null && predicted != null) ? Math.round((predicted - stmtBal) * 100) / 100 : null
+  // saldo do banco: do extrato (se tiver) OU digitado à mão (formatos "Movimenti" não trazem saldo)
+  const bankBal = stmtBal != null ? stmtBal : (manualBal.trim() !== '' ? parseImporto(manualBal) : null)
+  const balDiff = (bankBal != null && predicted != null) ? Math.round((predicted - bankBal) * 100) / 100 : null
 
   // só oferece os tipos coerentes com a direção do movimento
   const typesFor = (r) => (r.amount < 0
@@ -564,14 +567,22 @@ export default function ImportStatement({ categories, accounts, expenses, income
                 {WHO.map((w) => <option key={w}>{w}</option>)}
               </select></div>
           </div>
-          {account && stmtBal != null && balDiff != null && (
+          {stmtBal == null && (
+            <div className="field" style={{ marginBottom: 6 }}>
+              <label>Saldo atual no banco (opcional — pra conferir)</label>
+              <input inputMode="decimal" value={manualBal} onChange={(e) => setManualBal(e.target.value)}
+                placeholder="ex: 480,28"
+                style={{ padding: 8, border: '1px solid var(--border)', borderRadius: 8, fontSize: 14, width: 160 }} />
+            </div>
+          )}
+          {account && bankBal != null && balDiff != null && (
             Math.abs(balDiff) < 0.01 ? (
               <div style={{ background: '#dcfce7', border: '1px solid #86efac', color: '#15803d', padding: 10, borderRadius: 10, fontSize: 13, marginBottom: 10 }}>
-                ✓ Confere: após importar, o app fica em <b>{money(predicted)}</b>, igual ao saldo do banco no extrato.
+                ✓ Confere: após importar, o app fica em <b>{money(predicted)}</b>, igual ao saldo do banco.
               </div>
             ) : (
               <div className="warn-banner" style={{ marginBottom: 10 }}>
-                ⚠️ <b>Saldos não batem.</b> Após importar, o app fica em <b>{money(predicted)}</b>, mas o banco mostra <b>{money(stmtBal)}</b> (diferença <b>{money(balDiff)}</b>). Provavelmente falta ou sobra algum lançamento — confira antes de confirmar.
+                ⚠️ <b>Saldos não batem.</b> Após importar, o app fica em <b>{money(predicted)}</b>, mas o banco mostra <b>{money(bankBal)}</b> (diferença <b>{money(balDiff)}</b>). Provavelmente falta ou sobra algum lançamento — confira antes de confirmar.
               </div>
             )
           )}
