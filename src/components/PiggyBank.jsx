@@ -75,6 +75,9 @@ export default function PiggyBank({ piggy = 'casa', expenses, incomes = [], fixe
     for (let mo = projStart; mo <= 12; mo++) { running -= unpaidTotal(mo); p[mo] = running }
     return p
   }, [balance, projStart, payments])
+  // saldo efetivo = saldo real menos os vencimentos do mês atual já marcados (verdes) = 1º da projeção
+  const paidNow = payments.filter((p) => Number(p.month) === projStart && p.paid).reduce((s, p) => s + Number(p.amount), 0)
+  const effBalance = balance - paidNow
 
   // ---------- acoes ----------
   const [editOpen, setEditOpen] = useState(false)
@@ -205,9 +208,9 @@ export default function PiggyBank({ piggy = 'casa', expenses, incomes = [], fixe
       <div className="summary" style={{ marginBottom: 16 }}>
         <div className="box">
           <div className="label">Saldo das reservas</div>
-          <div className="value" style={{ color: balance < 0 ? 'var(--danger)' : 'var(--teal)', fontSize: 22 }}>{money(balance)}</div>
+          <div className="value" style={{ color: effBalance < 0 ? 'var(--danger)' : 'var(--teal)', fontSize: 22 }}>{money(effBalance)}</div>
           <div className="meta" style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>
-            inicial {money(opening)} + aportes {money(aportes)} − retiradas {money(retiradas)}
+            saldo {money(balance)}{paidNow ? ` − pagos do mês ${money(paidNow)}` : ''}
           </div>
         </div>
         <div className="box">

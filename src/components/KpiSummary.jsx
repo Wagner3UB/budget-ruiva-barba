@@ -1,4 +1,4 @@
-import { money, disponivelOf, cofrinhoBalance } from '../lib/helpers'
+import { money, disponivelOf, reserveEffective } from '../lib/helpers'
 
 // Resumo de 4 valores: Disponível Gui/Nathi e Cofrinho Casa/Nathi
 export default function KpiSummary(props) {
@@ -7,8 +7,8 @@ export default function KpiSummary(props) {
 
   const dGui = disponivelOf('Gui', props, month)
   const dNathi = disponivelOf('Nathi', props, month)
-  const cCasa = cofrinhoBalance('casa', props, year)
-  const cNathi = cofrinhoBalance('nathi', props, year)
+  const cCasa = reserveEffective('casa', props, year)
+  const cNathi = reserveEffective('nathi', props, year)
 
   const boxes = [
     { label: 'Disponível Gui', value: dGui, color: dGui < 0 ? 'var(--danger)' : 'var(--green)' },

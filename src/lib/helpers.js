@@ -88,6 +88,20 @@ export function cofrinhoBalance(piggy, data, year) {
   return opening + aportes - retiradas
 }
 
+// Reserva EFETIVA = saldo real do cofrinho menos os vencimentos do mês atual já marcados como
+// pagos (verde). É o mesmo número do 1º mês da linha de Projeção — usado nos cards de reserva
+// pra KPI e projeção contarem a mesma história.
+export function reserveEffective(piggy, data, year) {
+  const { taxPayments = [], houseTaxes = [] } = data
+  const bal = cofrinhoBalance(piggy, data, year)
+  const curM = Number(periodKey(todayISO()).slice(5, 7))
+  const ids = new Set(houseTaxes.filter((t) => t.year === year && (t.piggy || 'casa') === piggy).map((t) => t.id))
+  const paidNow = taxPayments
+    .filter((p) => ids.has(p.tax_id) && Number(p.month) === curM && p.paid)
+    .reduce((s, p) => s + Number(p.amount), 0)
+  return bal - paidNow
+}
+
 // Converte "2.120,36" / "350,03" / "1000.50" em número. Retorna NaN se inválido.
 export function parseAmount(v) {
   if (v == null) return 0
