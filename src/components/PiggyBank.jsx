@@ -65,7 +65,7 @@ export default function PiggyBank({ piggy = 'casa', expenses, incomes = [], fixe
   // ---- Projeção da reserva: parte do saldo real e, do mês atual em diante, tira só os
   // vencimentos que AINDA NÃO foram pagos. Um vencimento pago já saiu da reserva (o saldo real
   // já reflete), então não é descontado de novo; um não pago ainda vai sair, então desconta. ----
-  const unpaidTotal = (mo) => payments.filter((p) => p.month === mo && !p.paid).reduce((s, p) => s + Number(p.amount), 0)
+  const unpaidTotal = (mo) => payments.filter((p) => p.month === mo && p.paid).reduce((s, p) => s + Number(p.amount), 0)
   const nowCycle = periodKey(todayISO())          // ciclo atual (dia<10 => mês anterior)
   const curY = Number(nowCycle.slice(0, 4)), curM = Number(nowCycle.slice(5, 7))
   const projStart = year > curY ? 1 : year < curY ? 13 : curM
