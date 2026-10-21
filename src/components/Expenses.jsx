@@ -99,8 +99,9 @@ export default function Expenses(props) {
     for (const fp of fixedPaid) if (fp.month === month && fp.paid) m[fp.fixed_id] = { source: 'check' }
     for (const f of fixedExpenses) {
       if (m[f.id]) continue
+      // extrato só pinta se for a MESMA categoria E valor próximo (evita falso match por valor)
       const hit = monthExpenses.find((e) => !e.fixed_id && !e.piggy_deposit && !e.piggy_withdraw
-        && Math.abs(Number(e.amount) - Number(f.amount)) < 0.5)
+        && e.category_id === f.category_id && Math.abs(Number(e.amount) - Number(f.amount)) < 0.5)
       if (hit) m[f.id] = { source: 'extrato' }
     }
     return m
