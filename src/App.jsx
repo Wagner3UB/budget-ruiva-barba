@@ -53,6 +53,7 @@ export default function App() {
   const [piggyYear, setPiggyYear] = useState([])
   const [taxPayments, setTaxPayments] = useState([])
   const [adjustments, setAdjustments] = useState([])
+  const [fixedPaid, setFixedPaid] = useState([])
 
   useEffect(() => {
     if (!supabaseReady) { setLoading(false); return }
@@ -66,7 +67,7 @@ export default function App() {
 
   const loadAll = useCallback(async () => {
     if (!session) return
-    const [c, e, r, g, a, i, b, fx, ht, py, tp, adj] = await Promise.all([
+    const [c, e, r, g, a, i, b, fx, ht, py, tp, adj, fp] = await Promise.all([
       supabase.from('categories').select('*').order('name'),
       supabase.from('expenses').select('*').order('date', { ascending: false }),
       supabase.from('recurring').select('*').order('description'),
@@ -79,6 +80,7 @@ export default function App() {
       supabase.from('piggy_year').select('*'),
       supabase.from('tax_payments').select('*'),
       supabase.from('adjustments').select('*'),
+      supabase.from('fixed_paid').select('*'),
     ])
     setCategories(c.data || [])
     setExpenses(e.data || [])
@@ -92,6 +94,7 @@ export default function App() {
     setPiggyYear(py.data || [])
     setTaxPayments(tp.data || [])
     setAdjustments(adj.data || [])
+    setFixedPaid(fp.data || [])
   }, [session])
 
   useEffect(() => { loadAll() }, [loadAll])
@@ -119,7 +122,7 @@ export default function App() {
 
   const shared = {
     categories, expenses, monthExpenses, recurring, goals,
-    accounts, incomes, balances, fixedExpenses, houseTaxes, piggyYear, taxPayments, adjustments, month, setMonth, theme, reload: loadAll,
+    accounts, incomes, balances, fixedExpenses, fixedPaid, houseTaxes, piggyYear, taxPayments, adjustments, month, setMonth, theme, reload: loadAll,
   }
 
   return (

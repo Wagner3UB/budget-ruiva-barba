@@ -8,7 +8,7 @@ const PAY = ['Não', 'Sim', 'Não contabilizado']
 const WHO = ['Gui', 'Nathi']
 
 export default function Expenses(props) {
-  const { categories, monthExpenses, accounts, fixedExpenses, month, setMonth, reload } = props
+  const { categories, monthExpenses, accounts, fixedExpenses, fixedPaid = [], month, setMonth, reload } = props
   const catById = useMemo(
     () => Object.fromEntries(categories.map((c) => [c.id, c])), [categories])
 
@@ -92,37 +92,30 @@ export default function Expenses(props) {
   const removeExpense = async (id) => { await supabase.from('expenses').delete().eq('id', id); reload() }
 
   // ---------- Fixos do mes ----------
+  // Fixos NÃO criam gasto. O "pago" é só cor: ou um check manual (fixed_paid) ou
+  // o extrato trazendo um gasto do mesmo valor no mês. Quem move dinheiro é o import.
   const paidFixedThisMonth = useMemo(() => {
     const m = {}
-    for (const e of monthExpenses) if (e.fixed_id) m[e.fixed_id] = e
+    for (const fp of fixedPaid) if (fp.month === month && fp.paid) m[fp.fixed_id] = { source: 'check' }
+    for (const f of fixedExpenses) {
+      if (m[f.id]) continue
+      const hit = monthExpenses.find((e) => !e.fixed_id && !e.piggy_deposit && !e.piggy_withdraw
+        && Math.abs(Number(e.amount) - Number(f.amount)) < 0.5)
+      if (hit) m[f.id] = { source: 'extrato' }
+    }
     return m
-  }, [monthExpenses])
+  }, [fixedPaid, fixedExpenses, monthExpenses, month])
 
   const monthFixed = fixedExpenses
     .filter((f) => fixedActiveIn(f, month))
     .sort((a, b) => (a.day_of_month || 1) - (b.day_of_month || 1))
 
   const markPaid = async (f) => {
-    let day = f.day_of_month || 1
-    const [yy, mm] = month.split('-').map(Number)
-    let dy = yy, dm = mm
-    if (day < CYCLE_START) { dm = mm + 1; if (dm > 12) { dm = 1; dy = yy + 1 } }
-    const mk = `${dy}-${String(dm).padStart(2, '0')}`
-    day = Math.min(day, daysInMonth(mk))
-    await supabase.from('expenses').insert({
-      date: `${mk}-${String(day).padStart(2, '0')}`,
-      category_id: f.category_id,
-      description: f.description || catById[f.category_id]?.name || '',
-      place: f.description || '',
-      amount: Number(f.amount),
-      paid_by: f.paid_by, account: f.account || null,
-      is_fixed: true, pay_status: 'Sim', fixed_id: f.id,
-    })
+    await supabase.from('fixed_paid').upsert({ fixed_id: f.id, month, paid: true })
     reload()
   }
   const unmarkPaid = async (f) => {
-    const row = paidFixedThisMonth[f.id]
-    if (row) await supabase.from('expenses').delete().eq('id', row.id)
+    await supabase.from('fixed_paid').delete().eq('fixed_id', f.id).eq('month', month)
     reload()
   }
 
@@ -201,15 +194,10 @@ export default function Expenses(props) {
     (!fPerson || f.paid_by === fPerson) &&
     (!fAccount || (f.account || '') === fAccount) &&
     (!fCategory || f.category_id === fCategory))
-  const fixosTotal = monthFixedFiltered.reduce((s, f) => {
-    const pr = paidFixedThisMonth[f.id]
-    return s + Number(pr ? pr.amount : f.amount)
-  }, 0)
-  const grandTotal = shownTotal + fixosTotal
-  const fixedPaidTotal = Object.values(paidFixedThisMonth).reduce((s, e) => s + Number(e.amount), 0)
-  const fixedPendingTotal = monthFixed
-    .filter((f) => !paidFixedThisMonth[f.id])
-    .reduce((s, f) => s + Number(f.amount), 0)
+  const fixosTotal = monthFixedFiltered.reduce((s, f) => s + Number(f.amount), 0) // só informativo (planejamento)
+  const grandTotal = shownTotal // fixos NÃO entram no gasto real — o gasto vem do extrato
+  const fixedPaidTotal = monthFixed.filter((f) => paidFixedThisMonth[f.id]).reduce((s, f) => s + Number(f.amount), 0)
+  const fixedPendingTotal = monthFixed.filter((f) => !paidFixedThisMonth[f.id]).reduce((s, f) => s + Number(f.amount), 0)
 
   const monthAdj = (props.adjustments || []).filter((a) => a.month === month && Number(a.amount) !== 0)
 
@@ -292,7 +280,8 @@ export default function Expenses(props) {
             ).map((f) => {
               const paidRow = paidFixedThisMonth[f.id]
               const isPaid = Boolean(paidRow)
-              const shown = isPaid ? Number(paidRow.amount) : Number(f.amount)
+              const fromExtrato = paidRow?.source === 'extrato'
+              const shown = Number(f.amount)
               const i = categories.findIndex((x) => x.id === f.category_id)
               const activeNow = fixedActiveIn(f, month)
               return (
@@ -308,9 +297,11 @@ export default function Expenses(props) {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <span className="amt" style={isPaid ? null : { color: 'var(--muted)' }}>{money(shown)}</span>
                       {activeNow && (
-                        <button className="btn btn-sm" style={isPaid ? { background: '#dcfce7', color: '#166534' } : {}}
-                          onClick={() => (isPaid ? unmarkPaid(f) : markPaid(f))}>
-                          {isPaid ? 'pago ✓' : 'marcar pago'}
+                        <button className="btn btn-sm" title={fromExtrato ? 'detectado no extrato' : 'só um check de cor — não mexe em saldo'}
+                          style={isPaid ? { background: '#dcfce7', color: '#166534' } : {}}
+                          disabled={fromExtrato}
+                          onClick={() => (fromExtrato ? null : isPaid ? unmarkPaid(f) : markPaid(f))}>
+                          {fromExtrato ? 'pago (extrato)' : isPaid ? 'pago ✓' : 'marcar pago'}
                         </button>
                       )}
                     </div>
