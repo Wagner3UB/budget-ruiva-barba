@@ -20,7 +20,6 @@ export default function Expenses(props) {
   const [paidBy, setPaidBy] = useState('Gui')
   const [account, setAccount] = useState('')
   const [payStatus, setPayStatus] = useState('Sim')
-  const [toReserve, setToReserve] = useState(false)
   const [busy, setBusy] = useState(false)
 
   // ---------- Retirada da reserva (reserva -> conta) ----------
@@ -44,12 +43,12 @@ export default function Expenses(props) {
       date, category_id: categoryId,
       description: place || catById[categoryId]?.name || '',
       place, amount: val,
-      paid_by: paidBy, account: account || null, pay_status: payStatus, to_reserve: toReserve,
+      paid_by: paidBy, account: account || null, pay_status: payStatus,
       is_transfer: isAmor,
     }
     if (editingExpId) {
       await supabase.from('expenses').update(payload).eq('id', editingExpId)
-      setEditingExpId(null); setPlace(''); setAmount(''); setPayStatus('Sim'); setToReserve(false); setBusy(false); reload(); showFlash('Gasto atualizado com sucesso ✓')
+      setEditingExpId(null); setPlace(''); setAmount(''); setPayStatus('Sim'); setBusy(false); reload(); showFlash('Gasto atualizado com sucesso ✓')
     } else {
       const { error: expErr } = await supabase.from('expenses').insert({ ...payload, is_fixed: false })
       if (expErr) { setBusy(false); showFlash('Erro ao salvar o gasto: ' + expErr.message); return }
@@ -74,20 +73,20 @@ export default function Expenses(props) {
         } else {
           showFlash(`Gasto adicionado — ${other} já tinha registrado essa entrada ✓`)
         }
-        setPlace(''); setAmount(''); setPayStatus('Sim'); setToReserve(false); setBusy(false); reload(); amountRef.current?.focus()
+        setPlace(''); setAmount(''); setPayStatus('Sim'); setBusy(false); reload(); amountRef.current?.focus()
         return
       }
-      setPlace(''); setAmount(''); setPayStatus('Sim'); setToReserve(false); setBusy(false); reload(); showFlash('Gasto adicionado com sucesso ✓')
+      setPlace(''); setAmount(''); setPayStatus('Sim'); setBusy(false); reload(); showFlash('Gasto adicionado com sucesso ✓')
       amountRef.current?.focus()
     }
   }
   const editExpense = (e) => {
     setDate(e.date); setCategoryId(e.category_id || ''); setPlace(e.place || '')
     setAmount(String(e.amount)); setPaidBy(e.paid_by || 'Gui'); setAccount(e.account || '')
-    setPayStatus(e.pay_status || 'Não'); setToReserve(!!e.to_reserve); setEditingExpId(e.id)
+    setPayStatus(e.pay_status || 'Não'); setEditingExpId(e.id)
     document.getElementById('gasto-form')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }
-  const cancelExpEdit = () => { setEditingExpId(null); setPlace(''); setAmount(''); setPayStatus('Sim'); setToReserve(false) }
+  const cancelExpEdit = () => { setEditingExpId(null); setPlace(''); setAmount(''); setPayStatus('Sim') }
 
   const removeExpense = async (id) => { await supabase.from('expenses').delete().eq('id', id); reload() }
 
@@ -250,11 +249,7 @@ export default function Expenses(props) {
             <input value={place} onChange={(e) => setPlace(e.target.value)} placeholder="ex: Penny, Amazon…" /></div>
           <div className="field"><label>Pago?</label>
             <select value={payStatus} onChange={(e) => setPayStatus(e.target.value)}>{PAY.map((p) => <option key={p}>{p}</option>)}</select></div>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, marginBottom: 12 }}>
-            <input type="checkbox" checked={toReserve} onChange={(e) => setToReserve(e.target.checked)} />
-            Enviar à poupança (vai para as reservas de quem pagou)
-          </label>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
             <button className="btn" style={{ flex: 1 }} disabled={busy}>{busy ? 'Salvando…' : editingExpId ? 'Salvar alteração' : 'Adicionar gasto'}</button>
             {editingExpId && <button type="button" className="btn btn-ghost" style={{ flex: 0, padding: '13px 16px' }} onClick={cancelExpEdit}>Cancelar</button>}
           </div>
