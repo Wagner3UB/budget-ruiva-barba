@@ -43,8 +43,6 @@ export default function App() {
 
   const [categories, setCategories] = useState([])
   const [expenses, setExpenses] = useState([])
-  const [recurring, setRecurring] = useState([])
-  const [goals, setGoals] = useState([])
   const [accounts, setAccounts] = useState([])
   const [incomes, setIncomes] = useState([])
   const [balances, setBalances] = useState([])
@@ -67,11 +65,9 @@ export default function App() {
 
   const loadAll = useCallback(async () => {
     if (!session) return
-    const [c, e, r, g, a, i, b, fx, ht, py, tp, adj, fp] = await Promise.all([
+    const [c, e, a, i, b, fx, ht, py, tp, adj, fp] = await Promise.all([
       supabase.from('categories').select('*').order('name'),
       supabase.from('expenses').select('*').order('date', { ascending: false }),
-      supabase.from('recurring').select('*').order('description'),
-      supabase.from('goals').select('*').order('name'),
       supabase.from('accounts').select('*').order('name'),
       supabase.from('incomes').select('*').order('created_at', { ascending: false }),
       supabase.from('balances').select('*'),
@@ -84,8 +80,6 @@ export default function App() {
     ])
     setCategories(c.data || [])
     setExpenses(e.data || [])
-    setRecurring(r.data || [])
-    setGoals(g.data || [])
     setAccounts(a.data || [])
     setIncomes(i.data || [])
     setBalances(b.data || [])
@@ -121,7 +115,7 @@ export default function App() {
   const monthExpenses = expenses.filter((x) => periodKey(x.date) === month)
 
   const shared = {
-    categories, expenses, monthExpenses, recurring, goals,
+    categories, expenses, monthExpenses,
     accounts, incomes, balances, fixedExpenses, fixedPaid, houseTaxes, piggyYear, taxPayments, adjustments, month, setMonth, theme, reload: loadAll,
   }
 
