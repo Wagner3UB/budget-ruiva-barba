@@ -357,6 +357,8 @@ export default function PiggyBank({ piggy = 'casa', expenses, incomes = [], fixe
         ) : movimentos.map((d) => {
           const isDep = d.piggy_deposit
           const externo = isDep ? d.from_cc === false : d.to_cc === false
+          // sinal REAL: depósito soma, retirada subtrai — e um "depósito" negativo é, na prática, uma saída
+          const signed = isDep ? Number(d.amount) : -Number(d.amount)
           return (
             <div className="item" key={d.id}>
               <div>
@@ -366,7 +368,7 @@ export default function PiggyBank({ piggy = 'casa', expenses, incomes = [], fixe
                 <div className="meta">{fmtDate(d.date)}</div>
               </div>
               <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                <span className="amt" style={{ color: isDep ? 'var(--teal)' : 'var(--danger)' }}>{isDep ? '+' : '−'}{money(d.amount)}</span>
+                <span className="amt" style={{ color: signed < 0 ? 'var(--danger)' : 'var(--teal)' }}>{signed < 0 ? '−' : '+'}{money(Math.abs(signed))}</span>
                 {isDep && <button className="icon-btn" title="editar" onClick={() => editDeposit(d)}><IconEdit /></button>}
                 <button className="x" title="excluir" onClick={() => delDeposit(d.id)}><IconTrash /></button>
               </span>
